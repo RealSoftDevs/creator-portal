@@ -17,7 +17,7 @@ interface TemplateSelectorModalProps {
   backgroundImage?: string;
   userName?: string;
   onClose: () => void;
-  onSelectTemplate: (config: any) => Promise<void>;
+  onSelectTemplate: (config: any) => Promise<boolean>;
   onUpgradeClick: () => void;
   onBack?: () => void;
   showBack?: boolean;

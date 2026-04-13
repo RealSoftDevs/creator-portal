@@ -5,12 +5,10 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  context: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
   try {
-    // Await the params (Next.js 15+ requires this)
-    const params = await context.params;
-    const slug = params.slug;
+    const { slug } = await context.params;
     
     console.log('Fetching portal with slug:', slug);
     

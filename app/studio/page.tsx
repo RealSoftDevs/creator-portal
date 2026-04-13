@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Palette, Crown, ArrowLeft, Plus } from 'lucide-react';
+import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { getTemplateById } from '@/lib/templates/index';
 import TemplateSelectorModal from '../components/TemplateSelectorModal';
 import { useStudioData } from './hooks/useStudioData';
