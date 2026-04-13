@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  password       String
+  isPremium      Boolean   @default(false)
+  razorpayId     String?   @unique
+  subscriptionId String?
+  createdAt      DateTime  @default(now())
+  portal         Portal?
+} 
+model Portal {
+  id               String    @id @default(cuid())
+  slug             String    @unique
+  title            String    @default("My Creator Portal")
+  bio              String?   @default("")
+  avatar           String?
+  templateId       String    @default("template1")
+  primaryColor     String    @default("#000000")
+  backgroundType   String    @default("color")
+  gradientStart    String?   @default("#000000")
+  gradientEnd      String?   @default("#ffffff")
+  backgroundImage  String?   
+  textColor        String?   
+  fontFamily       String    @default("font-sans")  // New field for fonts
+  userId           String    @unique
+  user             User      @relation(fields: [userId], references: [id])
+  links            Link[]
+  products         Product[]
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // Public page settings
+  publicTemplateId    String    @default("template1")
+  publicPrimaryColor  String    @default("#000000")
+  publicBackgroundType String   @default("color")
+  publicGradientStart String?
+  publicGradientEnd   String?
+  publicBackgroundImage String?
+  publicTextColor     String?
+  publicFontFamily    String    @default("font-sans")
+
+  // Admin page settings (premium only)
+  adminTemplateId     String?   @default("template1")
+  adminPrimaryColor   String?   @default("#000000")
+  adminBackgroundType String?   @default("color")
+  adminGradientStart  String?
+  adminGradientEnd    String?
+  adminBackgroundImage String?
+  adminTextColor      String?
+  adminFontFamily     String?   @default("font-sans")
+}
+
+model Link {
+  id            String    @id @default(cuid())
+  title         String
+  url           String
+  wrappedUrl    String?
+  imageUrl      String?   // Can store icon URL
+  iconType      String?   // 'emoji', 'local', 'url'
+  order         Int       @default(0)
+  clicks        Int       @default(0)
+  isActive      Boolean   @default(true)
+  portalId      String
+  portal        Portal    @relation(fields: [portalId], references: [id])
+  clicksList    Click[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Click {
+  id        String    @id @default(cuid())
+  linkId    String
+  link      Link      @relation(fields: [linkId], references: [id])
+  timestamp DateTime  @default(now())
+  userAgent String?
+  referrer  String?
+  country   String?
+  device    String?
+}
+
+model Product {
+  id        String    @id @default(cuid())
+  title     String
+  imageUrl  String
+  buyLink   String
+  price     String?
+  platform  String    @default("custom")
+  order     Int       @default(0)
+  portalId  String
+  portal    Portal    @relation(fields: [portalId], references: [id])
+  createdAt DateTime  @default(now())
+}
+
