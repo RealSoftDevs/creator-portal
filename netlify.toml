@@ -1,0 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  # Netlify Secret Scanning Omissions
+  # These paths contain the Prisma Client which Netlify's scanner sometimes flags
+  # because it thinks the DATABASE_URL is hardcoded, even when it's just a placeholder.
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/standalone/**, .netlify/.next/**, node_modules/.prisma/**"
+  SECRETS_SCAN_OMIT_KEYS = "DATABASE_URL"
+
+[[headers]]
+  for = "/_next/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
