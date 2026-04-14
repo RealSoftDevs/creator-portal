@@ -42,8 +42,7 @@ export async function POST(request: NextRequest) {
       if (settings.backgroundImage !== undefined) updateData.publicBackgroundImage = settings.backgroundImage;
       if (settings.textColor !== undefined) updateData.publicTextColor = settings.textColor;
       if (settings.fontFamily !== undefined) updateData.publicFontFamily = settings.fontFamily;
-      console.log('Updated public settings:', updateData);
-    } else if (target === 'admin') {
+     } else if (target === 'admin') {
       if (settings.templateId !== undefined) updateData.adminTemplateId = settings.templateId;
       if (settings.primaryColor !== undefined) updateData.adminPrimaryColor = settings.primaryColor;
       if (settings.backgroundType !== undefined) updateData.adminBackgroundType = settings.backgroundType;
@@ -52,8 +51,7 @@ export async function POST(request: NextRequest) {
       if (settings.backgroundImage !== undefined) updateData.adminBackgroundImage = settings.backgroundImage;
       if (settings.textColor !== undefined) updateData.adminTextColor = settings.textColor;
       if (settings.fontFamily !== undefined) updateData.adminFontFamily = settings.fontFamily;
-      console.log('Updated admin settings:', updateData);
-    }
+     }
     
     const updatedPortal = await prisma.portal.update({
       where: { id: user.portal.id },

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         { title: "Summer Fashion Dress", imageUrl: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=400&fit=crop", buyLink: "https://amazon.com", price: "", platform: "amazon" },
         { title: "Designer Handbag", imageUrl: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=400&fit=crop", buyLink: "https://myntra.com", price: "", platform: "myntra" },
         { title: "Sunglasses", imageUrl: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop", buyLink: "https://amazon.com", price: "", platform: "amazon" },
-        { title: "Casual Sneakers", imageUrl: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop", buyLink: "https://flipkart.com", price: "", platform: "flipkart" }
+        //{ title: "Casual Sneakers", imageUrl: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop", buyLink: "https://flipkart.com", price: "", platform: "flipkart" }
         //{ title: "Casual Sneakers", imageUrl: "https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop", buyLink: "https://flipkart.com", price: "₹79.99", platform: "flipkart" }
       ];
       
