@@ -10,25 +10,7 @@ import PreviewCard from './components/PreviewCard';
 import AddLinkModal from './components/AddLinkModal';
 import AddProductModal from './components/AddProductModal';
 import { useBackButton } from '@/app/hooks/useBackButton';
-
-interface Product {
-  id: string;
-  title: string;
-  imageUrl: string;
-  buyLink: string;
-  price: string;
-  platform: string;
-  isDummy?: boolean;
-}
-
-interface Link {
-  id: string;
-  title: string;
-  url: string;
-  order: number;
-  clicks: number;
-  imageUrl?: string;
-}
+import { Product, Link } from '@/lib/types';
 
 export default function StudioDashboard() {
   const [isPremium, setIsPremium] = useState(false);

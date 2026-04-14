@@ -1,23 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Product, Link } from '@/lib/types';
 
-interface Link {
-  id: string;
-  title: string;
-  url: string;
-  order: number;
-  clicks: number;
-  imageUrl?: string;
-}
 
-interface Product {
-  id: string;
-  title: string;
-  imageUrl: string;
-  buyLink: string;
-  price: string;
-  platform: string;
-}
 
 export function useStudioData() {
   const [links, setLinks] = useState<Link[]>([]);
@@ -101,7 +86,6 @@ export function useStudioData() {
   };
 
   const deleteProduct = async (id: string) => {
-    if (!confirm('Delete this product?')) return false;
     await fetch(`/api/portal/products?id=${id}`, { method: 'DELETE' });
     await fetchProducts();
     return true;

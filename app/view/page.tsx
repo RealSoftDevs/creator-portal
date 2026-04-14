@@ -14,12 +14,13 @@ interface SocialLink {
 }
 
 interface Product {
-  id: string;
-  title: string;
-  imageUrl: string;
-  buyLink: string;
-  price: string;
-  platform: string;
+     id: string;
+     title: string;
+     imageUrl: string;
+     buyLink: string;
+     price: string;
+     platform: string;
+     isDummy?: boolean;  // Optional flag for dummy products
 }
 
 interface PortalData {
