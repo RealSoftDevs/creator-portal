@@ -17,7 +17,7 @@ model User {
   subscriptionId String?
   createdAt      DateTime  @default(now())
   portal         Portal?
-} 
+}
 
 model Portal {
   id               String    @id @default(cuid())
@@ -30,9 +30,9 @@ model Portal {
   backgroundType   String    @default("color")
   gradientStart    String?   @default("#000000")
   gradientEnd      String?   @default("#ffffff")
-  backgroundImage  String?   
-  textColor        String?   
-  fontFamily       String    @default("font-sans")  // New field for fonts
+  backgroundImage  String?
+  textColor        String?
+  fontFamily       String    @default("font-sans")
   userId           String    @unique
   user             User      @relation(fields: [userId], references: [id])
   links            Link[]
@@ -41,24 +41,24 @@ model Portal {
   updatedAt        DateTime  @updatedAt
 
   // Public page settings
-  publicTemplateId    String    @default("template1")
-  publicPrimaryColor  String    @default("#000000")
+  publicTemplateId     String    @default("template1")
+  publicPrimaryColor   String    @default("#000000")
   publicBackgroundType String   @default("color")
-  publicGradientStart String?
-  publicGradientEnd   String?
+  publicGradientStart  String?
+  publicGradientEnd    String?
   publicBackgroundImage String?
-  publicTextColor     String?
-  publicFontFamily    String    @default("font-sans")
+  publicTextColor      String?
+  publicFontFamily     String    @default("font-sans")
 
   // Admin page settings (premium only)
-  adminTemplateId     String?   @default("template1")
-  adminPrimaryColor   String?   @default("#000000")
-  adminBackgroundType String?   @default("color")
-  adminGradientStart  String?
-  adminGradientEnd    String?
+  adminTemplateId      String?   @default("template1")
+  adminPrimaryColor    String?   @default("#000000")
+  adminBackgroundType  String?   @default("color")
+  adminGradientStart   String?
+  adminGradientEnd     String?
   adminBackgroundImage String?
-  adminTextColor      String?
-  adminFontFamily     String?   @default("font-sans")
+  adminTextColor       String?
+  adminFontFamily      String?   @default("font-sans")
 }
 
 model Link {
@@ -66,8 +66,8 @@ model Link {
   title         String
   url           String
   wrappedUrl    String?
-  imageUrl      String?   // Can store icon URL
-  iconType      String?   // 'emoji', 'local', 'url'
+  imageUrl      String?
+  iconType      String?
   order         Int       @default(0)
   clicks        Int       @default(0)
   isActive      Boolean   @default(true)

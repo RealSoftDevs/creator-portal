@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['@prisma/client'],
+  // In Next.js 15+, allowedDevOrigins is part of experimental.serverActions or similar
+  // but for simple dev origin allow-listing:
+  experimental: {
+  },
 };
-module.exports = {
-  allowedDevOrigins: ['192.168.1.32'],
-}
+
 export default nextConfig;

@@ -1,8 +1,10 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { verifyPassword, createToken } from '@/lib/auth';
 
-const prisma = new PrismaClient();
+import { NextResponse } from 'next/server';
+import { verifyPassword, createToken } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+
+
+
 
 export async function POST(request: Request) {
   try {
@@ -25,14 +27,12 @@ export async function POST(request: Request) {
     
     const token = await createToken(user.id);
     
-    // Create the response with cookie
     const response = NextResponse.json({ 
       success: true, 
       portalSlug: user.portal?.slug,
-      redirectTo: '/studio'  // Changed from /admin to /studio
+      redirectTo: '/studio'
     });
     
-    // Set cookie on the response
     response.cookies.set('token', token, {
       httpOnly: true,
       maxAge: 30 * 24 * 60 * 60,

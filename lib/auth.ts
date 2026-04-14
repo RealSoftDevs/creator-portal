@@ -1,8 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { SignJWT, jwtVerify } from 'jose';
-import { PrismaClient } from '@prisma/client';
+import prisma from './prisma';
 
-const prisma = new PrismaClient();
 const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-secret-change-this-to-something-secure');
 
 export async function hashPassword(password: string) {
