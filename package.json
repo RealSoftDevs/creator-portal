@@ -2,7 +2,7 @@
   "name": "creator-portal",
   "version": "0.1.0",
   "private": true,
-  "scripts": {
+   "scripts": {
     "build": "prisma generate && next build",
     "dev": "next dev",
     "start": "next start"
