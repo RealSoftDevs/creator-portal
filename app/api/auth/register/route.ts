@@ -24,7 +24,9 @@ export async function POST(request: Request) {
         password: hashedPassword,
         portal: {
           create: {
-            slug: slug
+            slug: slug,
+            templateId: 'template2', // Dark Elegance as default
+            primaryColor: '#1a1a1a'
           }
         }
       },

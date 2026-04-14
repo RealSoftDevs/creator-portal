@@ -6,13 +6,29 @@ import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { getTemplateById } from '@/lib/templates/index';
 import TemplateSelectorModal from '../components/TemplateSelectorModal';
 import { useStudioData } from './hooks/useStudioData';
-import StatsCard from './components/StatsCard';
 import PreviewCard from './components/PreviewCard';
-import LinksSection from './components/LinksSection';
-import GallerySection from './components/GallerySection';
 import AddLinkModal from './components/AddLinkModal';
 import AddProductModal from './components/AddProductModal';
 import { useBackButton } from '@/app/hooks/useBackButton';
+
+interface Product {
+  id: string;
+  title: string;
+  imageUrl: string;
+  buyLink: string;
+  price: string;
+  platform: string;
+  isDummy?: boolean;
+}
+
+interface Link {
+  id: string;
+  title: string;
+  url: string;
+  order: number;
+  clicks: number;
+  imageUrl?: string;
+}
 
 export default function StudioDashboard() {
   const [isPremium, setIsPremium] = useState(false);
@@ -33,8 +49,8 @@ export default function StudioDashboard() {
   const [publicBackgroundImage, setPublicBackgroundImage] = useState('');
 
   // Admin display settings
-  const [adminDisplayTemplate, setAdminDisplayTemplate] = useState('template1');
-  const [adminDisplayPrimaryColor, setAdminDisplayPrimaryColor] = useState('#000000');
+  const [adminDisplayTemplate, setAdminDisplayTemplate] = useState('template2');
+  const [adminDisplayPrimaryColor, setAdminDisplayPrimaryColor] = useState('#1a1a1a');
   const [adminDisplayTextColor, setAdminDisplayTextColor] = useState('');
   const [adminDisplayFontFamily, setAdminDisplayFontFamily] = useState('font-sans');
   const [adminDisplayBackgroundType, setAdminDisplayBackgroundType] = useState('color');
@@ -95,8 +111,8 @@ export default function StudioDashboard() {
       setPublicBackgroundImage(data.backgroundImage || '');
 
       // Set admin display
-      setAdminDisplayTemplate(data.templateId || 'template1');
-      setAdminDisplayPrimaryColor(data.primaryColor || '#000000');
+      setAdminDisplayTemplate(data.templateId || 'template2');
+      setAdminDisplayPrimaryColor(data.primaryColor || '#1a1a1a');
       setAdminDisplayTextColor(data.textColor || '');
       setAdminDisplayFontFamily(data.fontFamily || 'font-sans');
       setAdminDisplayBackgroundType(data.backgroundType || 'color');
@@ -176,6 +192,9 @@ export default function StudioDashboard() {
     router.push('/login');
   };
 
+  // Count only real products (not dummy)
+  const realProductsCount = products.filter((p: Product) => !p.isDummy).length;
+
   // Limit checks
   const canAddLink = () => {
     if (!isPremium && links.length >= 1) {
@@ -190,11 +209,11 @@ export default function StudioDashboard() {
   };
 
   const canAddProduct = () => {
-    if (!isPremium && products.length >= 3) {
-      alert('✨ Free users can only add 3 products. Upgrade to Premium for more!');
+    if (!isPremium && realProductsCount >= 4) {
+      alert('✨ Free users can only add 4 products. Upgrade to Premium for more!');
       return false;
     }
-    if (isPremium && products.length >= 50) {
+    if (isPremium && realProductsCount >= 50) {
       alert('✨ You have reached the limit of 50 products.');
       return false;
     }
@@ -211,7 +230,7 @@ export default function StudioDashboard() {
     await addProduct(product);
   };
 
-  const totalClicks = links.reduce((sum, link) => sum + (link.clicks || 0), 0);
+  const totalClicks = links.reduce((sum: number, link: Link) => sum + (link.clicks || 0), 0);
   const template = getTemplateById(adminDisplayTemplate);
   const backgroundStyle: React.CSSProperties = {};
 
@@ -290,7 +309,7 @@ export default function StudioDashboard() {
             </div>
           )}
 
-          {/* Stats Row with Limits */}
+          {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3 mb-6">
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
               <div className="text-2xl font-bold" style={textColorStyle}>{links.length}</div>
@@ -302,11 +321,11 @@ export default function StudioDashboard() {
               )}
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
-              <div className="text-2xl font-bold" style={textColorStyle}>{products.length}</div>
+              <div className="text-2xl font-bold" style={textColorStyle}>{realProductsCount}</div>
               <div className="text-xs opacity-70" style={textColorStyle}>
-                Products {!isPremium ? `(${products.length}/3)` : `(${products.length}/50)`}
+                Products {!isPremium ? `(${realProductsCount}/4)` : `(${realProductsCount}/50)`}
               </div>
-              {!isPremium && products.length >= 3 && (
+              {!isPremium && realProductsCount >= 4 && (
                 <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>
               )}
             </div>
@@ -377,13 +396,13 @@ export default function StudioDashboard() {
               </h2>
               <button
                 onClick={() => setShowAddProductModal(true)}
-                disabled={!isPremium && products.length >= 3}
+                disabled={!canAddProduct()}
                 className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 ${
-                  (!isPremium && products.length >= 3)
+                  !canAddProduct()
                     ? 'bg-gray-400 cursor-not-allowed'
                     : 'bg-black text-white'
                 }`}
-                title={!isPremium && products.length >= 3 ? 'Upgrade to add more products' : ''}
+                title={!canAddProduct() ? 'Upgrade to add more products' : ''}
               >
                 <Plus className="w-4 h-4" /> Add Product
               </button>
@@ -407,9 +426,19 @@ export default function StudioDashboard() {
                     <div className="p-2">
                       <h3 className="font-medium text-sm truncate" style={textColorStyle}>{product.title}</h3>
                       {product.price && <p className="text-xs text-green-600">{product.price}</p>}
-                      <button onClick={() => deleteProduct(product.id)} className="text-xs text-red-500 mt-1">
+                      <button
+                        onClick={() => {
+                          if (confirm(`Delete "${product.title}"?`)) {
+                            deleteProduct(product.id);
+                          }
+                        }}
+                        className="text-xs text-red-500 mt-1 hover:text-red-700 transition"
+                      >
                         Delete
                       </button>
+                      {product.isDummy && (
+                        <p className="text-xs text-gray-400 mt-1">Sample product</p>
+                      )}
                     </div>
                   </div>
                 ))}

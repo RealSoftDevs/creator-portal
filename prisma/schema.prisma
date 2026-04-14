@@ -25,8 +25,8 @@ model Portal {
   title            String    @default("My Creator Portal")
   bio              String?   @default("")
   avatar           String?
-  templateId       String    @default("template1")
-  primaryColor     String    @default("#000000")
+  templateId       String    @default("template2")  // Changed from template1
+  primaryColor     String    @default("#1a1a1a")    // Dark mode default
   backgroundType   String    @default("color")
   gradientStart    String?   @default("#000000")
   gradientEnd      String?   @default("#ffffff")

@@ -162,14 +162,14 @@ export const templates: Template[] = [
 ];
 
 export const getTemplateById = (id: string): Template => {
+  // If no template or template not found, return Dark Elegance as default
   const template = templates.find(t => t.id === id);
   if (!template) {
-    console.warn(`Template ${id} not found, using default`);
-    return templates[0];
+    console.warn(`Template ${id} not found, using default Dark Elegance`);
+    return templates[1]; // Dark Elegance
   }
   return template;
 };
-
 export const getFreeTemplates = (): Template[] => {
   return templates.filter(t => !t.isPremium);
 };
