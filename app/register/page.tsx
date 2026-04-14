@@ -33,7 +33,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="text-3xl font-bold text-center">Create Account</h2>
+          <h2 className="text-3xl font-bold text-center">Create Account .. </h2>
           <p className="text-center text-gray-600 mt-2">Start your creator portal</p>
         </div>
         
