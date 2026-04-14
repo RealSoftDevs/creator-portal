@@ -7,37 +7,65 @@ export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const slug = searchParams.get('slug');
-    
-    if (!slug) {
-      return NextResponse.json({ error: 'Missing slug parameter' }, { status: 400 });
-    }
-    
-    const portal = await prisma.portal.findUnique({
-      where: { slug: slug },
-      include: {
-        user: true,
-        links: {
-          where: { isActive: true },
-          orderBy: { order: 'asc' }
+    const username = searchParams.get('username');
+
+    let portal = null;
+
+    // Try to find by username first (premium custom URL)
+    if (username) {
+      portal = await prisma.portal.findFirst({
+        where: {
+          user: {
+            name: {
+              equals: username,
+              mode: 'insensitive'
+            }
+          }
         },
-        products: {
-          orderBy: { order: 'asc' }
+        include: {
+          user: true,
+          links: {
+            where: { isActive: true },
+            orderBy: { order: 'asc' }
+          },
+          products: {
+            orderBy: { order: 'asc' }
+          }
         }
-      }
-    });
-    
+      });
+    }
+
+    // If not found by username, try by slug (free tier)
+    if (!portal && slug) {
+      portal = await prisma.portal.findUnique({
+        where: { slug: slug },
+        include: {
+          user: true,
+          links: {
+            where: { isActive: true },
+            orderBy: { order: 'asc' }
+          },
+          products: {
+            orderBy: { order: 'asc' }
+          }
+        }
+      });
+    }
+
     if (!portal) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
 
-    // Return PUBLIC settings (not admin settings)
+    // Return the user's preferred name (custom username if set, otherwise use name)
+    const displayName = portal.user.name || portal.slug;
+
     return NextResponse.json({
       title: portal.title,
       bio: portal.bio,
-      userName: portal.user.name,
+      userName: displayName,
+      slug: portal.slug,
       links: portal.links,
       products: portal.products,
-      // Public settings from database
       templateId: portal.publicTemplateId || 'template1',
       primaryColor: portal.publicPrimaryColor || '#000000',
       backgroundType: portal.publicBackgroundType || 'color',

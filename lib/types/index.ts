@@ -3,7 +3,7 @@ export interface Product {
   title: string;
   imageUrl: string;
   buyLink: string;
-  price?: string;
+  price: string | null;
   platform?: string;
   isDummy?: boolean;
   order?: number;

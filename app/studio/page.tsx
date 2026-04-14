@@ -2,11 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2, Edit2, Check, X, Eye } from 'lucide-react';
 import { getTemplateById } from '@/lib/templates/index';
 import TemplateSelectorModal from '../components/TemplateSelectorModal';
 import { useStudioData } from './hooks/useStudioData';
-import PreviewCard from './components/PreviewCard';
 import AddLinkModal from './components/AddLinkModal';
 import AddProductModal from './components/AddProductModal';
 import { useBackButton } from '@/app/hooks/useBackButton';
@@ -19,6 +18,8 @@ export default function StudioDashboard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [userName, setUserName] = useState('');
+  const [customUsername, setCustomUsername] = useState('');
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
 
   // Public page settings
   const [publicTemplate, setPublicTemplate] = useState('template1');
@@ -42,7 +43,7 @@ export default function StudioDashboard() {
   const [useSeparateAdminStyle, setUseSeparateAdminStyle] = useState(false);
 
   const router = useRouter();
-  const { links, products, loading, portalSlug, addLink, addProduct, deleteLink, deleteProduct, fetchLinks, fetchProducts } = useStudioData();
+  const { links, products, loading, portalSlug, addLink, addProduct, deleteLink, deleteProduct } = useStudioData();
 
   // Handle physical back button - go to dashboard
   const handleGoToDashboard = () => {
@@ -72,6 +73,10 @@ export default function StudioDashboard() {
       const data = await res.json();
       if (data.userName) {
         setUserName(data.userName);
+        setCustomUsername(data.userName);
+      } else if (data.slug) {
+        setUserName(data.slug);
+        setCustomUsername(data.slug);
       }
     } catch (error) {
       console.error('Failed to fetch user info:', error);
@@ -115,6 +120,47 @@ export default function StudioDashboard() {
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
+    }
+  };
+
+  const updateUsername = async () => {
+    if (!isPremium) {
+      alert('✨ Custom URL is a premium feature. Please upgrade to use it!');
+      setIsEditingUsername(false);
+      return;
+    }
+
+    if (!customUsername.trim() || customUsername.trim().length < 3) {
+      alert('Username must be at least 3 characters');
+      return;
+    }
+
+    // Only allow letters, numbers, and underscores
+    const validUsername = customUsername.toLowerCase().replace(/[^a-z0-9_]/g, '');
+    if (validUsername !== customUsername.toLowerCase()) {
+      alert('Username can only contain letters, numbers, and underscores');
+      setCustomUsername(validUsername);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/portal/update-username', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: validUsername })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setUserName(validUsername);
+        setIsEditingUsername(false);
+        alert(`Your page is now at: ${window.location.origin}/view/${validUsername}`);
+      } else {
+        alert(data.error || 'Username already taken');
+      }
+    } catch (error) {
+      console.error('Failed to update username:', error);
+      alert('Failed to update username');
     }
   };
 
@@ -175,7 +221,7 @@ export default function StudioDashboard() {
   };
 
   // Count only real products (not dummy)
-  const realProductsCount = products.filter((p: Product) => !p.isDummy).length;
+  const realProductsCount = products.filter((p) => !p.isDummy).length;
 
   // Limit checks
   const canAddLink = () => {
@@ -233,6 +279,16 @@ export default function StudioDashboard() {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
 
+  // Get the public URL for preview
+  const getPublicUrl = () => {
+    if (typeof window === 'undefined') return '';
+    const baseUrl = window.location.origin;
+    if (isPremium && userName && userName !== portalSlug) {
+      return `${baseUrl}/view/${userName}`;
+    }
+    return `${baseUrl}/view?slug=${portalSlug}`;
+  };
+
   return (
     <div className={`min-h-screen ${fontClass}`} style={backgroundStyle}>
       {adminDisplayBackgroundImage && <div className="fixed inset-0 bg-black/40 pointer-events-none" />}
@@ -271,7 +327,87 @@ export default function StudioDashboard() {
         </div>
 
         <div className="max-w-md mx-auto px-4 py-6">
-          <PreviewCard portalSlug={portalSlug} />
+          {/* Public Page & Custom URL - Combined */}
+          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm opacity-90">Your public page</p>
+              <button
+                onClick={() => window.open(getPublicUrl(), '_blank')}
+                className="bg-white/20 px-3 py-1 rounded-full text-sm flex items-center gap-1 hover:bg-white/30 transition"
+              >
+                <Eye className="w-4 h-4" /> Preview
+              </button>
+            </div>
+
+            {/* URL Display */}
+            <p className="font-mono text-xs break-all">
+              {getPublicUrl()}
+            </p>
+
+            {/* Custom URL Editor - Inline */}
+            {isPremium ? (
+              <div className="mt-3 pt-2 border-t border-white/20">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs opacity-80">✨ Custom URL:</span>
+                  <span className="text-xs opacity-60">
+                    {typeof window !== 'undefined' && window.location.origin}/view/
+                  </span>
+                  {isEditingUsername ? (
+                    <>
+                      <input
+                        type="text"
+                        value={customUsername}
+                        onChange={(e) => setCustomUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+                        placeholder="yourname"
+                        className="flex-1 min-w-[100px] px-2 py-0.5 rounded bg-white/20 text-white text-xs focus:outline-none focus:ring-1 focus:ring-white"
+                        autoFocus
+                      />
+                      <button onClick={updateUsername} className="text-green-300 text-xs p-0.5 hover:bg-white/10 rounded">
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => {
+                        setIsEditingUsername(false);
+                        setCustomUsername(userName);
+                      }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => {
+                          setCustomUsername(userName || portalSlug || '');
+                          setIsEditingUsername(true);
+                        }}
+                        className="text-xs text-white/80 hover:text-white underline flex items-center gap-1"
+                      >
+                        {userName || portalSlug || 'set-custom-url'}
+                        <Edit2 className="w-2.5 h-2.5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+                <p className="text-[10px] opacity-60 mt-1">
+                  {userName && userName !== portalSlug ? 'Your custom URL is active' : 'Set a custom URL (letters, numbers, underscores)'}
+                </p>
+              </div>
+            ) : (
+              <div className="mt-3 pt-2 border-t border-white/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs opacity-80">✨ Custom URL</span>
+                  <button
+                    onClick={() => setShowPaymentModal(true)}
+                    className="bg-yellow-500/30 text-yellow-200 text-xs px-2 py-0.5 rounded-full hover:bg-yellow-500/40 transition"
+                  >
+                    Upgrade
+                  </button>
+                </div>
+                <p className="text-[10px] opacity-60 mt-1">
+                  Get a clean, memorable URL like /view/yourname
+                </p>
+              </div>
+            )}
+          </div>
 
           {isPremium && (
             <div className="mb-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg">
@@ -458,13 +594,14 @@ export default function StudioDashboard() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto p-6 text-center">
             <h3 className="text-xl font-bold mb-2">Upgrade to Premium</h3>
-            <p className="text-gray-600 mb-4">Get access to premium templates, unlimited links, and more!</p>
+            <p className="text-gray-600 mb-4">Get access to premium features!</p>
             <ul className="text-left text-sm space-y-2 mb-4">
               <li>✓ 10+ Premium Templates</li>
               <li>✓ Up to 10 Links</li>
               <li>✓ Up to 50 Products</li>
               <li>✓ Custom Colors & Gradients</li>
               <li>✓ Separate Admin Styling</li>
+              <li>✓ ✨ Custom Page URL (/view/yourname)</li>
             </ul>
             <button onClick={handleUpgradeClick} className="w-full bg-black text-white py-3 rounded-xl">
               Upgrade Now - ₹999
