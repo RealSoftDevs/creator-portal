@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2, Edit2, Check, X, Eye } from 'lucide-react';
+import {
+  LogOut, Palette, Crown, ArrowLeft, Plus, Trash2,
+  Eye, Check, X, Edit2
+} from 'lucide-react';
 import { getTemplateById } from '@/lib/templates/index';
 import TemplateSelectorModal from '../components/TemplateSelectorModal';
 import { useStudioData } from './hooks/useStudioData';
@@ -12,6 +15,9 @@ import { useBackButton } from '@/app/hooks/useBackButton';
 import { Product, Link } from '@/lib/types';
 
 export default function StudioDashboard() {
+  const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -42,7 +48,6 @@ export default function StudioDashboard() {
   const [adminDisplayBackgroundImage, setAdminDisplayBackgroundImage] = useState('');
   const [useSeparateAdminStyle, setUseSeparateAdminStyle] = useState(false);
 
-  const router = useRouter();
   const { links, products, loading, portalSlug, addLink, addProduct, deleteLink, deleteProduct } = useStudioData();
 
   // Handle physical back button - go to dashboard
@@ -52,10 +57,22 @@ export default function StudioDashboard() {
   useBackButton(handleGoToDashboard, true);
 
   useEffect(() => {
-    checkPremiumStatus();
-    loadCurrentSettings();
-    fetchUserInfo();
+    setIsClient(true);
   }, []);
+
+  const verifyPortalOwnership = async () => {
+    try {
+      const res = await fetch('/api/portal/verify');
+      const data = await res.json();
+      if (!data.ownsPortal) {
+        router.push('/dashboard');
+      } else {
+        setIsAuthorized(true);
+      }
+    } catch (error) {
+      router.push('/login');
+    }
+  };
 
   const checkPremiumStatus = async () => {
     try {
@@ -123,6 +140,15 @@ export default function StudioDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (isClient) {
+      verifyPortalOwnership();
+      checkPremiumStatus();
+      loadCurrentSettings();
+      fetchUserInfo();
+    }
+  }, [isClient]);
+
   const updateUsername = async () => {
     if (!isPremium) {
       alert('✨ Custom URL is a premium feature. Please upgrade to use it!');
@@ -135,7 +161,6 @@ export default function StudioDashboard() {
       return;
     }
 
-    // Only allow letters, numbers, and underscores
     const validUsername = customUsername.toLowerCase().replace(/[^a-z0-9_]/g, '');
     if (validUsername !== customUsername.toLowerCase()) {
       alert('Username can only contain letters, numbers, and underscores');
@@ -221,7 +246,7 @@ export default function StudioDashboard() {
   };
 
   // Count only real products (not dummy)
-  const realProductsCount = products.filter((p) => !p.isDummy).length;
+  const realProductsCount = products.filter((p: Product) => !p.isDummy).length;
 
   // Limit checks
   const canAddLink = () => {
@@ -275,10 +300,6 @@ export default function StudioDashboard() {
   const textColorStyle = { color: adminDisplayTextColor || template.defaultTextColor };
   const fontClass = adminDisplayFontFamily || 'font-sans';
 
-  if (loading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
-  }
-
   // Get the public URL for preview
   const getPublicUrl = () => {
     if (typeof window === 'undefined') return '';
@@ -288,6 +309,15 @@ export default function StudioDashboard() {
     }
     return `${baseUrl}/view?slug=${portalSlug}`;
   };
+
+  // Show loading while checking authorization
+  if (!isClient || !isAuthorized) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+  }
+
+  if (loading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className={`min-h-screen ${fontClass}`} style={backgroundStyle}>
@@ -339,19 +369,13 @@ export default function StudioDashboard() {
               </button>
             </div>
 
-            {/* URL Display */}
-            <p className="font-mono text-xs break-all">
-              {getPublicUrl()}
-            </p>
+            <p className="font-mono text-xs break-all">{getPublicUrl()}</p>
 
-            {/* Custom URL Editor - Inline */}
             {isPremium ? (
               <div className="mt-3 pt-2 border-t border-white/20">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-xs opacity-80">✨ Custom URL:</span>
-                  <span className="text-xs opacity-60">
-                    {typeof window !== 'undefined' && window.location.origin}/view/
-                  </span>
+                  <span className="text-xs opacity-60">{typeof window !== 'undefined' && window.location.origin}/view/</span>
                   {isEditingUsername ? (
                     <>
                       <input
@@ -365,26 +389,18 @@ export default function StudioDashboard() {
                       <button onClick={updateUsername} className="text-green-300 text-xs p-0.5 hover:bg-white/10 rounded">
                         <Check className="w-3 h-3" />
                       </button>
-                      <button onClick={() => {
-                        setIsEditingUsername(false);
-                        setCustomUsername(userName);
-                      }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
+                      <button onClick={() => { setIsEditingUsername(false); setCustomUsername(userName); }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
                         <X className="w-3 h-3" />
                       </button>
                     </>
                   ) : (
-                    <>
-                      <button
-                        onClick={() => {
-                          setCustomUsername(userName || portalSlug || '');
-                          setIsEditingUsername(true);
-                        }}
-                        className="text-xs text-white/80 hover:text-white underline flex items-center gap-1"
-                      >
-                        {userName || portalSlug || 'set-custom-url'}
-                        <Edit2 className="w-2.5 h-2.5" />
-                      </button>
-                    </>
+                    <button
+                      onClick={() => { setCustomUsername(userName || portalSlug || ''); setIsEditingUsername(true); }}
+                      className="text-xs text-white/80 hover:text-white underline flex items-center gap-1"
+                    >
+                      {userName || portalSlug || 'set-custom-url'}
+                      <Edit2 className="w-2.5 h-2.5" />
+                    </button>
                   )}
                 </div>
                 <p className="text-[10px] opacity-60 mt-1">
@@ -395,37 +411,16 @@ export default function StudioDashboard() {
               <div className="mt-3 pt-2 border-t border-white/20">
                 <div className="flex items-center justify-between">
                   <span className="text-xs opacity-80">✨ Custom URL</span>
-                  <button
-                    onClick={() => setShowPaymentModal(true)}
-                    className="bg-yellow-500/30 text-yellow-200 text-xs px-2 py-0.5 rounded-full hover:bg-yellow-500/40 transition"
-                  >
+                  <button onClick={() => setShowPaymentModal(true)} className="bg-yellow-500/30 text-yellow-200 text-xs px-2 py-0.5 rounded-full hover:bg-yellow-500/40 transition">
                     Upgrade
                   </button>
                 </div>
-                <p className="text-[10px] opacity-60 mt-1">
-                  Get a clean, memorable URL like /view/yourname
-                </p>
+                <p className="text-[10px] opacity-60 mt-1">Get a clean, memorable URL like /view/yourname</p>
               </div>
             )}
           </div>
 
-          {isPremium && (
-            <div className="mb-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg">
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm font-medium" style={textColorStyle}>Separate Admin Style</span>
-                <button
-                  onClick={() => setUseSeparateAdminStyle(!useSeparateAdminStyle)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${
-                    useSeparateAdminStyle ? 'bg-green-500' : 'bg-gray-400'
-                  }`}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
-                    useSeparateAdminStyle ? 'translate-x-6' : 'translate-x-1'
-                  }`} />
-                </button>
-              </label>
-            </div>
-          )}
+
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3 mb-6">
@@ -434,18 +429,14 @@ export default function StudioDashboard() {
               <div className="text-xs opacity-70" style={textColorStyle}>
                 Links {!isPremium ? `(${links.length}/1)` : `(${links.length}/10)`}
               </div>
-              {!isPremium && links.length >= 1 && (
-                <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>
-              )}
+              {!isPremium && links.length >= 1 && <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>}
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
               <div className="text-2xl font-bold" style={textColorStyle}>{realProductsCount}</div>
               <div className="text-xs opacity-70" style={textColorStyle}>
                 Products {!isPremium ? `(${realProductsCount}/4)` : `(${realProductsCount}/50)`}
               </div>
-              {!isPremium && realProductsCount >= 4 && (
-                <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>
-              )}
+              {!isPremium && realProductsCount >= 4 && <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>}
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
               <div className="text-2xl font-bold" style={textColorStyle}>{totalClicks}</div>
@@ -456,17 +447,11 @@ export default function StudioDashboard() {
           {/* Links Section */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>
-                🔗 Links
-              </h2>
+              <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>🔗 Links</h2>
               <button
                 onClick={() => setShowAddModal(true)}
                 disabled={!isPremium && links.length >= 1}
-                className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 ${
-                  (!isPremium && links.length >= 1)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-black text-white'
-                }`}
+                className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 ${(!isPremium && links.length >= 1) ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white'}`}
                 title={!isPremium && links.length >= 1 ? 'Upgrade to add more links' : ''}
               >
                 <Plus className="w-4 h-4" /> Add link
@@ -476,26 +461,17 @@ export default function StudioDashboard() {
             {links.length === 0 ? (
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
                 <p className="opacity-70" style={textColorStyle}>No links yet</p>
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="mt-3 text-black underline text-sm"
-                >
-                  Add your first link
-                </button>
+                <button onClick={() => setShowAddModal(true)} className="mt-3 text-black underline text-sm">Add your first link</button>
               </div>
             ) : (
               <div className="space-y-2">
                 {links.map((link) => (
                   <div key={link.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center gap-3">
-                    {link.imageUrl && (
-                      <img src={link.imageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
-                    )}
+                    {link.imageUrl && <img src={link.imageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-medium truncate" style={textColorStyle}>{link.title}</h3>
                       <p className="text-xs opacity-60 truncate" style={textColorStyle}>{link.url}</p>
-                      {link.clicks > 0 && (
-                        <p className="text-xs text-green-600 mt-1">{link.clicks} clicks</p>
-                      )}
+                      {link.clicks > 0 && <p className="text-xs text-green-600 mt-1">{link.clicks} clicks</p>}
                     </div>
                     <button onClick={() => deleteLink(link.id)} className="p-2 rounded-full hover:bg-red-500/20 transition">
                       <Trash2 className="w-4 h-4 text-red-500" />
@@ -509,17 +485,11 @@ export default function StudioDashboard() {
           {/* Gallery Section */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>
-                🖼️ Gallery
-              </h2>
+              <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>🖼️ Gallery</h2>
               <button
                 onClick={() => setShowAddProductModal(true)}
                 disabled={!canAddProduct()}
-                className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 ${
-                  !canAddProduct()
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-black text-white'
-                }`}
+                className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 ${!canAddProduct() ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white'}`}
                 title={!canAddProduct() ? 'Upgrade to add more products' : ''}
               >
                 <Plus className="w-4 h-4" /> Add Product
@@ -529,12 +499,7 @@ export default function StudioDashboard() {
             {products.length === 0 ? (
               <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
                 <p className="opacity-70" style={textColorStyle}>No products in gallery</p>
-                <button
-                  onClick={() => setShowAddProductModal(true)}
-                  className="mt-3 text-black underline text-sm"
-                >
-                  Add your first product
-                </button>
+                <button onClick={() => setShowAddProductModal(true)} className="mt-3 text-black underline text-sm">Add your first product</button>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -544,19 +509,10 @@ export default function StudioDashboard() {
                     <div className="p-2">
                       <h3 className="font-medium text-sm truncate" style={textColorStyle}>{product.title}</h3>
                       {product.price && <p className="text-xs text-green-600">{product.price}</p>}
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete "${product.title}"?`)) {
-                            deleteProduct(product.id);
-                          }
-                        }}
-                        className="text-xs text-red-500 mt-1 hover:text-red-700 transition"
-                      >
+                      <button onClick={() => { if (confirm(`Delete "${product.title}"?`)) deleteProduct(product.id); }} className="text-xs text-red-500 mt-1 hover:text-red-700 transition">
                         Delete
                       </button>
-                      {product.isDummy && (
-                        <p className="text-xs text-gray-400 mt-1">Sample product</p>
-                      )}
+                      {product.isDummy && <p className="text-xs text-gray-400 mt-1">Sample product</p>}
                     </div>
                   </div>
                 ))}
@@ -603,12 +559,8 @@ export default function StudioDashboard() {
               <li>✓ Separate Admin Styling</li>
               <li>✓ ✨ Custom Page URL (/view/yourname)</li>
             </ul>
-            <button onClick={handleUpgradeClick} className="w-full bg-black text-white py-3 rounded-xl">
-              Upgrade Now - ₹999
-            </button>
-            <button onClick={() => setShowPaymentModal(false)} className="w-full mt-2 py-2 text-gray-500">
-              Cancel
-            </button>
+            <button onClick={handleUpgradeClick} className="w-full bg-black text-white py-3 rounded-xl">Upgrade Now - ₹999</button>
+            <button onClick={() => setShowPaymentModal(false)} className="w-full mt-2 py-2 text-gray-500">Cancel</button>
           </div>
         </div>
       )}

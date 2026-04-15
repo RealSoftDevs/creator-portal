@@ -23,6 +23,7 @@ interface TemplateSelectorModalProps {
   showBack?: boolean;
 }
 
+// Map Tailwind gradient classes to actual CSS gradients
 const getGradientCSS = (gradient: string): string => {
   const gradientMap: Record<string, string> = {
     'from-blue-100 via-blue-50 to-indigo-100': 'linear-gradient(135deg, #dbeafe, #eff6ff, #e0e7ff)',
@@ -257,14 +258,7 @@ export default function TemplateSelectorModal({
     const template = getTemplateById(previewTemplate);
     if (template.isPremium && !isPremium) { onUpgradeClick(); return; }
     if (!isPremium) {
-      alert('✨ Upgrade to Premium to apply themes to both pages! Only Public page will be updated.');
-      setApplying(true);
-      await onSelectTemplate({ ...getBaseConfig(), target: 'public' });
-      setApplying(false);
-      setInitialValues({
-        previewTemplate, backgroundColor, backgroundType, gradientStart, gradientEnd,
-        backgroundImage, textColor: customTextColor, fontFamily: selectedFont,
-      });
+      alert('✨ Upgrade to Premium to apply themes to both pages!');
       return;
     }
     setApplying(true);
@@ -317,44 +311,45 @@ export default function TemplateSelectorModal({
       <div className="bg-white rounded-xl w-full max-w-lg mx-auto flex flex-col max-h-[85vh]">
         <Header applyToAll={applyToAll} setApplyToAll={setApplyToAll} onClose={handleClose} onBack={handleBackArrow} showBack={showBack} />
 
-        {/* Timer */}
+        {/* Timer - Sticky Top */}
         <div className="sticky top-0 z-10 bg-white px-4 pt-2 pb-1">
           <div className="flex items-center justify-between text-xs text-gray-400 mb-1">
             <span>⏱️ Auto-close</span>
             <span className={secondsRemaining < 10 ? 'text-red-500 font-bold' : ''}>{secondsRemaining}s remaining</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div className={`h-1.5 rounded-full transition ${secondsRemaining < 10 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${progressPercent}%` }} />
+            <div className={`h-1.5 rounded-full transition-all duration-300 ${secondsRemaining < 10 ? 'bg-red-500' : 'bg-blue-500'}`} style={{ width: `${progressPercent}%` }} />
           </div>
         </div>
 
         {showTimerWarning && (
           <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-2 text-xs mx-4 rounded sticky top-[60px] z-10">
-            ⏰ Closing in {secondsRemaining}s...
+            ⏰ Closing in {secondsRemaining} seconds due to inactivity...
           </div>
         )}
 
-        {/* Live Preview */}
+        {/* Live Preview - Sticky */}
         <div className="sticky top-[72px] z-10 bg-white p-3 border-b">
           <LivePreview getPreviewStyle={getPreviewStyle} getPreviewTextColor={getPreviewTextColor} getPreviewFont={getPreviewFont} userName={userName} />
         </div>
 
-        {/* Templates Grid - Scrollable */}
+        {/* Scrollable Content - Templates only */}
         <div className="flex-1 overflow-y-auto p-3 pt-0">
           <TemplatesGrid freeTemplates={freeTemplates} premiumTemplates={premiumTemplates} previewTemplate={previewTemplate} isPremium={isPremium} onPreviewClick={handlePreviewClick} />
         </div>
 
-        {/* Ultra Compact Customization */}
+        {/* Customization Options - Sticky Bottom */}
         <div className="sticky bottom-0 bg-white border-t p-2">
+          {/* Background, Text Color, Font Options in one row */}
           <div className="flex items-center gap-1 flex-wrap">
-            {/* Background Type */}
+            {/* Background type buttons */}
             <div className="flex gap-0.5">
               <button onClick={() => setBackgroundType('color')} className={`w-6 h-6 rounded text-xs ${backgroundType === 'color' ? 'bg-black text-white' : 'bg-gray-100'}`}>🎨</button>
               <button onClick={() => isPremium && setBackgroundType('gradient')} disabled={!isPremium} className={`w-6 h-6 rounded text-xs ${backgroundType === 'gradient' ? 'bg-black text-white' : 'bg-gray-100'} ${!isPremium ? 'opacity-40' : ''}`}>🌈</button>
               <button onClick={() => isPremium && setBackgroundType('image')} disabled={!isPremium} className={`w-6 h-6 rounded text-xs ${backgroundType === 'image' ? 'bg-black text-white' : 'bg-gray-100'} ${!isPremium ? 'opacity-40' : ''}`}>🖼️</button>
             </div>
 
-            {/* Background Value */}
+            {/* Background value input */}
             {backgroundType === 'color' && (
               <input type="color" value={backgroundColor} onChange={(e) => handleBackgroundColorChange(e.target.value)} className="w-7 h-6 rounded border" />
             )}
@@ -369,10 +364,10 @@ export default function TemplateSelectorModal({
               <input type="url" placeholder="URL" value={backgroundImage} onChange={(e) => handleBackgroundImageChange(e.target.value)} className="flex-1 min-w-0 px-1 py-0.5 border rounded text-xs" />
             )}
 
-            {/* Text Color */}
+            {/* Text color picker */}
             <input type="color" value={customTextColor} onChange={(e) => handleTextColorChange(e.target.value)} disabled={!isPremium} className={`w-6 h-6 rounded border ${!isPremium ? 'opacity-40' : ''}`} />
 
-            {/* Font Selector */}
+            {/* Font selector */}
             <div className="flex gap-0.5">
               <button onClick={() => handleFontChange('font-sans')} className={`w-7 h-6 rounded text-xs ${selectedFont === 'font-sans' ? 'bg-black text-white' : 'bg-gray-100'}`}>Sa</button>
               <button onClick={() => handleFontChange('font-serif')} className={`w-7 h-6 rounded text-xs ${selectedFont === 'font-serif' ? 'bg-black text-white' : 'bg-gray-100'}`}>Se</button>
@@ -380,17 +375,15 @@ export default function TemplateSelectorModal({
             </div>
           </div>
 
-          {/* Apply Buttons */}
-          <div className="flex gap-2 mt-2">
-            {applyToAll ? (
-              <button onClick={handleApplyToBoth} disabled={applying} className="flex-1 py-1.5 bg-black text-white rounded text-xs font-medium">{applying ? '...' : 'Apply to Both'}</button>
-            ) : (
-              <>
-                <button onClick={handleApplyToPublic} disabled={applying} className="flex-1 py-1.5 bg-green-600 text-white rounded text-xs font-medium">Public</button>
-                <button onClick={handleApplyToAdmin} disabled={applying || !isPremium} className={`flex-1 py-1.5 rounded text-xs font-medium ${isPremium ? 'bg-black text-white' : 'bg-gray-200 text-gray-400'}`}>Admin {!isPremium && '🔒'}</button>
-              </>
-            )}
-          </div>
+          {/* Footer with Apply Buttons */}
+          <Footer
+            applyToAll={applyToAll}
+            isPremium={isPremium}
+            applying={applying}
+            onApplyToPublic={handleApplyToPublic}
+            onApplyToAdmin={handleApplyToAdmin}
+            onApplyToBoth={handleApplyToBoth}
+          />
         </div>
       </div>
     </div>

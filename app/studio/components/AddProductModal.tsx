@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Image as ImageIcon } from 'lucide-react';
+import { X, Image as ImageIcon, Upload } from 'lucide-react';
 
 interface AddProductModalProps {
   onClose: () => void;
@@ -14,21 +14,46 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
   const [buyLink, setBuyLink] = useState('');
   const [price, setPrice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);  // Add this line
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setImageUrl(reader.result as string);
-      reader.readAsDataURL(file);
-    }
-  };
+   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+     const file = e.target.files?.[0];
+     if (!file) return;
+
+     setUploading(true);
+
+     const formData = new FormData();
+     formData.append('file', file);
+
+     try {
+       const res = await fetch('/api/upload', {
+         method: 'POST',
+         body: formData,
+       });
+
+       const data = await res.json();
+       if (data.success) {
+         setImageUrl(data.url);
+         // Show compression stats
+         console.log(`✅ Image optimized: ${data.compressionRatio} saved`);
+       } else {
+         alert(data.error || 'Upload failed');
+       }
+     } catch (error) {
+       console.error('Upload error:', error);
+       alert('Upload failed');
+     } finally {
+       setUploading(false);
+     }
+   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !imageUrl || !buyLink) return;
     setLoading(true);
-    const platform = buyLink.includes('amazon') ? 'amazon' : buyLink.includes('myntra') ? 'myntra' : buyLink.includes('flipkart') ? 'flipkart' : 'custom';
+    const platform = buyLink.includes('amazon') ? 'amazon' :
+                     buyLink.includes('myntra') ? 'myntra' :
+                     buyLink.includes('flipkart') ? 'flipkart' : 'custom';
     await onSave({ title, imageUrl, buyLink, price, platform });
     setLoading(false);
     onClose();
@@ -47,17 +72,26 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
               <img src={imageUrl} alt="Preview" className="w-full h-40 object-cover rounded-lg" />
             ) : (
               <label className="cursor-pointer block">
-                <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                <span className="text-sm text-gray-500">Upload Image</span>
-                <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" />
+                {uploading ? (
+                  <div className="flex flex-col items-center">
+                    <div className="w-8 h-8 border-2 border-gray-300 border-t-black rounded-full animate-spin mb-2" />
+                    <span className="text-sm text-gray-500">Optimizing image...</span>
+                  </div>
+                ) : (
+                  <>
+                    <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                    <span className="text-sm text-gray-500">Click to upload</span>
+                  </>
+                )}
+                <input type="file" accept="image/*" capture="environment" onChange={handleImageUpload} className="hidden" disabled={uploading} />
               </label>
             )}
           </div>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Product Title" className="w-full px-4 py-3 border rounded-xl" required />
-          <input type="url" value={buyLink} onChange={(e) => setBuyLink(e.target.value)} placeholder="Buy Link" className="w-full px-4 py-3 border rounded-xl" required />
+          <input type="url" value={buyLink} onChange={(e) => setBuyLink(e.target.value)} placeholder="Buy Link (Amazon/Myntra/Flipkart)" className="w-full px-4 py-3 border rounded-xl" required />
           <input type="text" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="Price (optional)" className="w-full px-4 py-3 border rounded-xl" />
-          <button type="submit" disabled={loading} className="w-full bg-black text-white py-3 rounded-xl">
-            {loading ? 'Adding...' : 'Add Product'}
+          <button type="submit" disabled={loading || uploading} className="w-full bg-black text-white py-3 rounded-xl">
+            {loading ? 'Adding...' : uploading ? 'Uploading...' : 'Add Product'}
           </button>
         </form>
       </div>

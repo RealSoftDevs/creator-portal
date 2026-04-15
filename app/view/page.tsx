@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getTemplateById } from '@/lib/templates/index';
 import PlatformIcon from '@/app/components/PlatformIcon';
+import CloudinaryImage from '@/app/components/CloudinaryImage';
+import { useEffect, useState, Suspense } from 'react';
 
 interface SocialLink {
   id: string;
@@ -14,13 +15,13 @@ interface SocialLink {
 }
 
 interface Product {
-     id: string;
-     title: string;
-     imageUrl: string;
-     buyLink: string;
-     price: string;
-     platform: string;
-     isDummy?: boolean;  // Optional flag for dummy products
+  id: string;
+  title: string;
+  imageUrl: string;
+  buyLink: string;
+  price: string;
+  platform: string;
+  isDummy?: boolean;
 }
 
 interface PortalData {
@@ -39,33 +40,33 @@ interface PortalData {
   fontFamily?: string;
 }
 
-// Platform background colors (official brand colors)
+// Platform background colors
 const getPlatformColor = (platform: string): string => {
   const colors: Record<string, string> = {
-    instagram: 'bg-[#E4405F]',
-    youtube: 'bg-[#FF0000]',
-    tiktok: 'bg-[#000000]',
-    facebook: 'bg-[#1877F2]',
-    twitter: 'bg-[#000000]',
-    x: 'bg-[#000000]',
-    linkedin: 'bg-[#0A66C2]',
-    github: 'bg-[#181717]',
-    twitch: 'bg-[#9146FF]',
-    discord: 'bg-[#5865F2]',
-    whatsapp: 'bg-[#25D366]',
-    telegram: 'bg-[#26A5E4]',
-    amazon: 'bg-[#FF9900]',
-    myntra: 'bg-[#E91E63]',
-    flipkart: 'bg-[#2874F0]',
-    spotify: 'bg-[#1DB954]',
-    apple: 'bg-[#000000]',
-    snapchat: 'bg-[#FFFC00]',
-    pinterest: 'bg-[#BD081C]',
-    reddit: 'bg-[#FF4500]',
-    email: 'bg-[#D14836]',
-    phone: 'bg-[#25D366]',
-    website: 'bg-[#6B7280]',
-    linktree: 'bg-[#39E09B]'
+    instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    youtube: 'bg-red-600',
+    tiktok: 'bg-black',
+    facebook: 'bg-blue-600',
+    twitter: 'bg-blue-400',
+    x: 'bg-blue-400',
+    linkedin: 'bg-blue-700',
+    github: 'bg-gray-800',
+    twitch: 'bg-purple-600',
+    discord: 'bg-indigo-500',
+    whatsapp: 'bg-green-500',
+    telegram: 'bg-blue-500',
+    amazon: 'bg-orange-500',
+    myntra: 'bg-pink-600',
+    flipkart: 'bg-blue-800',
+    spotify: 'bg-green-600',
+    apple: 'bg-black',
+    snapchat: 'bg-yellow-400',
+    pinterest: 'bg-red-700',
+    reddit: 'bg-orange-600',
+    email: 'bg-gray-500',
+    phone: 'bg-green-500',
+    website: 'bg-gray-600',
+    linktree: 'bg-green-600'
   };
   return colors[platform.toLowerCase()] || 'bg-gray-600';
 };
@@ -119,10 +120,12 @@ function ViewContent() {
     );
   }
 
+  // Get the template
   const template = getTemplateById(portal.templateId || 'template1');
   const fontFamilyClass = portal.fontFamily || 'font-sans';
+  const gradientClass = `bg-gradient-to-r ${template.gradient}`;
 
-  // Build background style
+  // Build background style for custom gradients/images
   const backgroundStyle: React.CSSProperties = {};
 
   if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
@@ -132,17 +135,19 @@ function ViewContent() {
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.backgroundAttachment = 'fixed';
-  } else {
-    backgroundStyle.backgroundColor = portal.primaryColor || template.defaultBackground;
   }
 
   // Text color
-  const customTextColorStyle = { color: portal.textColor || template.defaultTextColor };
+  const displayTextColor = portal.textColor || template.defaultTextColor;
+  const customTextColorStyle = { color: displayTextColor };
   const socialAccounts = portal.links || [];
   const products = portal.products || [];
 
   return (
-    <div className={`min-h-screen ${fontFamilyClass}`} style={backgroundStyle}>
+    <div
+      className={`min-h-screen ${gradientClass} ${fontFamilyClass}`}
+      style={backgroundStyle}
+    >
       {/* Overlay for better readability when using background image */}
       {portal.backgroundImage && (
         <div className="fixed inset-0 bg-black/40 pointer-events-none" />
@@ -160,14 +165,14 @@ function ViewContent() {
           )}
         </div>
 
-        {/* GALLERY SECTION - Products (Always shown if products exist) */}
+        {/* Product Gallery */}
         {products.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2" style={customTextColorStyle}>
               🖼️ Gallery
             </h2>
             <div className="grid grid-cols-2 gap-3">
-              {products.map((product) => (
+              {products.slice(0, 4).map((product) => (
                 <a
                   key={product.id}
                   href={product.buyLink}
@@ -175,9 +180,11 @@ function ViewContent() {
                   rel="noopener noreferrer"
                   className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group"
                 >
-                  <img
+                  <CloudinaryImage
                     src={product.imageUrl}
                     alt={product.title}
+                    width={400}
+                    height={400}
                     className="w-full h-32 object-cover group-hover:scale-105 transition duration-300"
                   />
                   <div className="p-2">
@@ -191,11 +198,11 @@ function ViewContent() {
           </div>
         )}
 
-        {/* LINKS SECTION - Social Links (Always shown if links exist) */}
+        {/* Social Links Section */}
         {socialAccounts.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2" style={customTextColorStyle}>
-              🔗 Links
+              🔗 Connect With Me
             </h2>
             <div className="space-y-3">
               {socialAccounts.map((link) => {
@@ -233,6 +240,7 @@ function ViewContent() {
   );
 }
 
+// Main export with Suspense boundary
 export default function ViewPage() {
   return (
     <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
