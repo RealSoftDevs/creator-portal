@@ -10,9 +10,11 @@ import AddLinkModal from './components/AddLinkModal';
 import AddProductModal from './components/AddProductModal';
 import { useBackButton } from '@/app/hooks/useBackButton';
 import { Product, Link } from '@/lib/types';
+import { useAuth } from '@/app/hooks/useAuth';
 
 export default function StudioDashboard() {
   const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth('/login');
   const [isPremium, setIsPremium] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -53,15 +55,17 @@ export default function StudioDashboard() {
 
   // Main initialization
   useEffect(() => {
-    const init = async () => {
-      await loadCurrentSettings();
-      await fetchUserInfo();
-      await checkPremiumStatus();
-      await fetchLinks();
-      await fetchProducts();
-    };
-    init();
-  }, []);
+    if (isAuthenticated) {
+      const init = async () => {
+        await loadCurrentSettings();
+        await fetchUserInfo();
+        await checkPremiumStatus();
+        await fetchLinks();
+        await fetchProducts();
+      };
+      init();
+    }
+  }, [isAuthenticated]);
 
   const checkPremiumStatus = async () => {
     try {
@@ -304,8 +308,14 @@ export default function StudioDashboard() {
     return `${baseUrl}/view?slug=${portalSlug}`;
   };
 
-  if (loading) {
+  // Show loading state
+  if (authLoading || loading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+  }
+
+  // If not authenticated, don't render (will redirect)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (

@@ -2,8 +2,9 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function deleteUser() {
-  const email = 'maninder.birhe@gmail.com'; // Change this to the user's email
-  
+  //const email = 'maninder.birhe@gmail.com'; // Change this to the user's email
+  const email = 'dr.charuwagle@gmail.com'; // Change this to the user's email
+
   try {
     // First delete the user's portal and related data
     const user = await prisma.user.findUnique({
