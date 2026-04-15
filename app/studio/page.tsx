@@ -2,10 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  LogOut, Palette, Crown, ArrowLeft, Plus, Trash2,
-  Eye, Check, X, Edit2
-} from 'lucide-react';
+import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2, Eye, Check, X, Edit2 } from 'lucide-react';
 import { getTemplateById } from '@/lib/templates/index';
 import TemplateSelectorModal from '../components/TemplateSelectorModal';
 import { useStudioData } from './hooks/useStudioData';
@@ -16,8 +13,7 @@ import { Product, Link } from '@/lib/types';
 
 export default function StudioDashboard() {
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -56,23 +52,30 @@ export default function StudioDashboard() {
   };
   useBackButton(handleGoToDashboard, true);
 
+  // Authentication check
   useEffect(() => {
-    setIsClient(true);
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/user/status');
+        if (res.status === 401) {
+          router.push('/login');
+        } else {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        router.push('/login');
+      }
+    };
+    checkAuth();
   }, []);
 
-  const verifyPortalOwnership = async () => {
-    try {
-      const res = await fetch('/api/portal/verify');
-      const data = await res.json();
-      if (!data.ownsPortal) {
-        router.push('/dashboard');
-      } else {
-        setIsAuthorized(true);
-      }
-    } catch (error) {
-      router.push('/login');
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkPremiumStatus();
+      loadCurrentSettings();
+      fetchUserInfo();
     }
-  };
+  }, [isAuthenticated]);
 
   const checkPremiumStatus = async () => {
     try {
@@ -114,7 +117,6 @@ export default function StudioDashboard() {
       setPublicGradientEnd(data.gradientEnd || '');
       setPublicBackgroundImage(data.backgroundImage || '');
 
-      // Set admin display
       setAdminDisplayTemplate(data.templateId || 'template2');
       setAdminDisplayPrimaryColor(data.primaryColor || '#1a1a1a');
       setAdminDisplayTextColor(data.textColor || '');
@@ -139,15 +141,6 @@ export default function StudioDashboard() {
       console.error('Failed to load settings:', error);
     }
   };
-
-  useEffect(() => {
-    if (isClient) {
-      verifyPortalOwnership();
-      checkPremiumStatus();
-      loadCurrentSettings();
-      fetchUserInfo();
-    }
-  }, [isClient]);
 
   const updateUsername = async () => {
     if (!isPremium) {
@@ -245,10 +238,8 @@ export default function StudioDashboard() {
     router.push('/login');
   };
 
-  // Count only real products (not dummy)
   const realProductsCount = products.filter((p: Product) => !p.isDummy).length;
 
-  // Limit checks
   const canAddLink = () => {
     if (!isPremium && links.length >= 1) {
       alert('✨ Free users can only add 1 link. Upgrade to Premium for more links!');
@@ -300,7 +291,6 @@ export default function StudioDashboard() {
   const textColorStyle = { color: adminDisplayTextColor || template.defaultTextColor };
   const fontClass = adminDisplayFontFamily || 'font-sans';
 
-  // Get the public URL for preview
   const getPublicUrl = () => {
     if (typeof window === 'undefined') return '';
     const baseUrl = window.location.origin;
@@ -310,8 +300,7 @@ export default function StudioDashboard() {
     return `${baseUrl}/view?slug=${portalSlug}`;
   };
 
-  // Show loading while checking authorization
-  if (!isClient || !isAuthorized) {
+  if (!isAuthenticated) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
 
@@ -357,7 +346,7 @@ export default function StudioDashboard() {
         </div>
 
         <div className="max-w-md mx-auto px-4 py-6">
-          {/* Public Page & Custom URL - Combined */}
+          {/* Public Page & Custom URL */}
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white mb-6">
             <div className="flex items-center justify-between mb-2">
               <p className="text-sm opacity-90">Your public page</p>
@@ -420,7 +409,19 @@ export default function StudioDashboard() {
             )}
           </div>
 
-
+          {isPremium && (
+            <div className="mb-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg">
+              <label className="flex items-center justify-between cursor-pointer">
+                <span className="text-sm font-medium" style={textColorStyle}>Separate Admin Style</span>
+                <button
+                  onClick={() => setUseSeparateAdminStyle(!useSeparateAdminStyle)}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${useSeparateAdminStyle ? 'bg-green-500' : 'bg-gray-400'}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${useSeparateAdminStyle ? 'translate-x-6' : 'translate-x-1'}`} />
+                </button>
+              </label>
+            </div>
+          )}
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3 mb-6">

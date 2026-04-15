@@ -9,28 +9,51 @@ export default function DashboardPage() {
   const router = useRouter();
   const [portalSlug, setPortalSlug] = useState('');
   const [currentPath, setCurrentPath] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useBackButton(undefined, true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setCurrentPath(window.location.pathname);
-    }
-
-    fetch('/api/portal/info')
-      .then(res => res.json())
-      .then(data => {
-        if (data.slug) {
-          setPortalSlug(data.slug);
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/user/status');
+        if (res.status === 401) {
+          router.push('/login');
+        } else {
+          setIsAuthenticated(true);
         }
-      })
-      .catch(() => {});
+      } catch (error) {
+        router.push('/login');
+      }
+    };
+    checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (typeof window !== 'undefined') {
+        setCurrentPath(window.location.pathname);
+      }
+
+      fetch('/api/portal/info')
+        .then(res => res.json())
+        .then(data => {
+          if (data.slug) {
+            setPortalSlug(data.slug);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   };
+
+  if (!isAuthenticated) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,6 +92,17 @@ export default function DashboardPage() {
             <p className="text-sm text-white/80">Sign out of your account</p>
           </button>
         </div>
+      </div>
+
+      {/* Debug Panel */}
+      <div className="fixed bottom-0 left-0 right-0 bg-black/80 text-white text-xs p-2 z-50 font-mono">
+        <details>
+          <summary className="cursor-pointer">🔍 Debug Info</summary>
+          <div className="mt-2 space-y-1">
+            <div>📍 Path: {currentPath}</div>
+            <div>🔗 Portal Slug: {portalSlug || 'Loading...'}</div>
+          </div>
+        </details>
       </div>
     </div>
   );
