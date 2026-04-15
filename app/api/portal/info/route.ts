@@ -26,21 +26,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
     
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📡 INFO API - Portal Data');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('templateId:', user.portal.templateId);
+    console.log('primaryColor:', user.portal.primaryColor);
+    console.log('backgroundType:', user.portal.backgroundType);
+    console.log('backgroundImage:', user.portal.backgroundImage);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     // Return ALL portal settings
     return NextResponse.json({
       slug: user.portal.slug,
       title: user.portal.title,
       bio: user.portal.bio,
-      userName: user.name,  // Add this line
-      // Public settings
-      templateId: user.portal.publicTemplateId,
-      primaryColor: user.portal.publicPrimaryColor,
-      backgroundType: user.portal.publicBackgroundType,
-      gradientStart: user.portal.publicGradientStart,
-      gradientEnd: user.portal.publicGradientEnd,
-      backgroundImage: user.portal.publicBackgroundImage,
-      textColor: user.portal.publicTextColor,
-      fontFamily: user.portal.publicFontFamily,
+      userName: user.name,
+      // Main settings
+      templateId: user.portal.templateId,
+      primaryColor: user.portal.primaryColor,
+      backgroundType: user.portal.backgroundType,
+      backgroundImage: user.portal.backgroundImage,
+      gradientStart: user.portal.gradientStart,
+      gradientEnd: user.portal.gradientEnd,
+      textColor: user.portal.textColor,
+      fontFamily: user.portal.fontFamily,
       // Admin settings (for premium users)
       adminTemplateId: user.portal.adminTemplateId,
       adminPrimaryColor: user.portal.adminPrimaryColor,
@@ -50,7 +59,7 @@ export async function GET(request: NextRequest) {
       adminBackgroundImage: user.portal.adminBackgroundImage,
       adminTextColor: user.portal.adminTextColor,
       adminFontFamily: user.portal.adminFontFamily
-    });;
+    });
     
   } catch (error) {
     console.error('Portal info error:', error);

@@ -88,6 +88,15 @@ function ViewContent() {
     fetch(`/api/portal/public?slug=${slug}`)
       .then(res => res.json())
       .then(data => {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('👁️ PUBLIC PAGE LOADING');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`Portal slug: ${slug}`);
+        console.log(`Template ID from API: ${data.templateId}`);
+        console.log(`Primary Color from API: ${data.primaryColor}`);
+        console.log(`Background Type from API: ${data.backgroundType}`);
+        console.log(`Background Image from API: ${data.backgroundImage || 'none'}`);
+
         if (data.error) {
           setError(true);
         } else {
@@ -120,21 +129,25 @@ function ViewContent() {
     );
   }
 
-  // Get the template
+  // Get the template - ONLY ONCE
   const template = getTemplateById(portal.templateId || 'template1');
   const fontFamilyClass = portal.fontFamily || 'font-sans';
-  const gradientClass = `bg-gradient-to-r ${template.gradient}`;
 
-  // Build background style for custom gradients/images
+  // Build background style
   const backgroundStyle: React.CSSProperties = {};
 
-  if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
-    backgroundStyle.background = `linear-gradient(135deg, ${portal.gradientStart}, ${portal.gradientEnd})`;
-  } else if (portal.backgroundType === 'image' && portal.backgroundImage) {
+  if (portal.backgroundType === 'image' && portal.backgroundImage) {
     backgroundStyle.backgroundImage = `url(${portal.backgroundImage})`;
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.backgroundAttachment = 'fixed';
+    console.log('🎨 Using background image:', portal.backgroundImage);
+  } else if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
+    backgroundStyle.background = `linear-gradient(135deg, ${portal.gradientStart}, ${portal.gradientEnd})`;
+    console.log('🎨 Using gradient background');
+  } else {
+    backgroundStyle.backgroundColor = portal.primaryColor || template.defaultBackground;
+    console.log('🎨 Using solid color:', backgroundStyle.backgroundColor);
   }
 
   // Text color
@@ -144,13 +157,10 @@ function ViewContent() {
   const products = portal.products || [];
 
   return (
-    <div
-      className={`min-h-screen ${gradientClass} ${fontFamilyClass}`}
-      style={backgroundStyle}
-    >
+    <div className={`min-h-screen ${fontFamilyClass}`} style={backgroundStyle}>
       {/* Overlay for better readability when using background image */}
       {portal.backgroundImage && (
-        <div className="fixed inset-0 bg-black/40 pointer-events-none" />
+        <div className="fixed inset-0 bg-black/30 pointer-events-none" />
       )}
 
       <div className="relative z-10 max-w-md mx-auto px-4 py-8">

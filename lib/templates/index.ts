@@ -1,3 +1,5 @@
+import { defaultConfig, defaultTemplate } from '@/lib/defaults';
+
 export interface Template {
   id: string;
   name: string;
@@ -12,18 +14,21 @@ export interface Template {
 }
 
 export const templates: Template[] = [
+      defaultTemplate,
+
+
   // FREE TEMPLATES (2) - Soft pastel gradients
   {
-    id: 'template1',
-    name: 'Soft Morning',
-    description: 'Gentle blue gradient',
-    isPremium: false,
-    gradient: 'from-blue-100 via-blue-50 to-indigo-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#dbeafe',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Free',
-    category: 'Soft',
+ id: 'template14',
+  name: 'Pure White',
+  description: 'Clean white background',
+  isPremium: false,
+  gradient: 'from-white to-gray-100',
+  textColor: 'text-gray-900',
+  defaultBackground: '#ffffff',
+  defaultTextColor: '#1a1a1a',
+  previewBadge: 'Free',
+  category: 'Light',
   },
   {
     id: 'template2',
@@ -162,11 +167,21 @@ export const templates: Template[] = [
 ];
 
 export const getTemplateById = (id: string): Template => {
+  console.log(`🔍 Looking for template: ${id}`);
+
   const template = templates.find(t => t.id === id);
   if (!template) {
-    console.warn(`Template ${id} not found, using default`);
-    return templates[0];
+    console.warn(`⚠️ Template ${id} not found, using default`);
+    const defaultTemplate = templates[0];
+    console.log(`📌 Using default template: ${defaultTemplate.id} - ${defaultTemplate.name}`);
+    console.log(`   Background: ${defaultTemplate.defaultBackground}`);
+    console.log(`   Text Color: ${defaultTemplate.defaultTextColor}`);
+    return defaultTemplate;
   }
+
+  console.log(`✅ Found template: ${template.id} - ${template.name}`);
+  console.log(`   Background: ${template.defaultBackground}`);
+  console.log(`   Text Color: ${template.defaultTextColor}`);
   return template;
 };
 

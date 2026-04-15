@@ -56,9 +56,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
 
-    // Return the user's preferred name (custom username if set, otherwise use name)
+    // Return the user's preferred name
     const displayName = portal.user.name || portal.slug;
 
+    // IMPORTANT: Use MAIN fields, NOT public prefixed fields
     return NextResponse.json({
       title: portal.title,
       bio: portal.bio,
@@ -66,14 +67,14 @@ export async function GET(request: NextRequest) {
       slug: portal.slug,
       links: portal.links,
       products: portal.products,
-      templateId: portal.publicTemplateId || 'template1',
-      primaryColor: portal.publicPrimaryColor || '#000000',
-      backgroundType: portal.publicBackgroundType || 'color',
-      gradientStart: portal.publicGradientStart,
-      gradientEnd: portal.publicGradientEnd,
-      backgroundImage: portal.publicBackgroundImage,
-      textColor: portal.publicTextColor,
-      fontFamily: portal.publicFontFamily || 'font-sans'
+      templateId: portal.templateId || 'template1',
+      primaryColor: portal.primaryColor || '#f5f5f5',
+      backgroundType: portal.backgroundType || 'image',  // ← Use main field
+      gradientStart: portal.gradientStart,
+      gradientEnd: portal.gradientEnd,
+      backgroundImage: portal.backgroundImage,  // ← Use main field
+      textColor: portal.textColor,
+      fontFamily: portal.fontFamily || 'font-sans'
     });
     
   } catch (error) {
