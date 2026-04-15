@@ -419,16 +419,6 @@ export default function StudioDashboard() {
             )}
           </div>
 
-          {isPremium && (
-            <div className="mb-4 p-3 bg-white/10 backdrop-blur-sm rounded-lg">
-              <label className="flex items-center justify-between cursor-pointer">
-                <span className="text-sm font-medium" style={textColorStyle}>Separate Admin Style</span>
-                <button onClick={() => setUseSeparateAdminStyle(!useSeparateAdminStyle)} className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${useSeparateAdminStyle ? 'bg-green-500' : 'bg-gray-400'}`}>
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${useSeparateAdminStyle ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
-              </label>
-            </div>
-          )}
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3 mb-6">
