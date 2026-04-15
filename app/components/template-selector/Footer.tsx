@@ -18,7 +18,7 @@ export default function Footer({ applyToAll, isPremium, applying, onApplyToPubli
           disabled={applying}
           className="w-full py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50"
         >
-          {applying ? 'Applying...' : 'Apply to Both Pages'}
+          {applying ? 'Applying...' : 'Apply to Both'}
         </button>
       ) : (
         <div className="flex gap-2">
@@ -27,7 +27,7 @@ export default function Footer({ applyToAll, isPremium, applying, onApplyToPubli
             disabled={applying}
             className="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition"
           >
-            Public
+            Apply to Public
           </button>
           <button
             onClick={onApplyToAdmin}
@@ -36,7 +36,7 @@ export default function Footer({ applyToAll, isPremium, applying, onApplyToPubli
               isPremium ? 'bg-black text-white hover:bg-gray-800' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
             }`}
           >
-            Admin {!isPremium && '🔒'}
+            Apply to Admin {!isPremium && '🔒'}
           </button>
         </div>
       )}
