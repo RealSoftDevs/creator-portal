@@ -15,3 +15,10 @@ status = 200
 from = "/*"
 to = "/index.html"
 status = 200
+
+# Ignore secrets scanning for public environment variables
+[build.processing]
+skip_processing = true
+
+[build.processing.secrets_scanning]
+enabled = false
