@@ -1,95 +1,111 @@
+// app/api/upload/route.ts - Ensure proper Cloudinary URL format
 import { NextRequest, NextResponse } from 'next/server';
+import { v2 as cloudinary } from 'cloudinary';
 import sharp from 'sharp';
 
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const compressionLevel = (formData.get('compression') as string) || 'medium';
 
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
 
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large. Max 5MB' }, { status: 400 });
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large. Max 10MB' }, { status: 400 });
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📸 IMAGE UPLOAD & COMPRESSION');
+    console.log('📸 IMAGE UPLOAD TO CLOUDINARY');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📁 File name: ${file.name}`);
-    console.log(`📏 File type: ${file.type}`);
-    console.log(`📊 Original size: ${(file.size / 1024).toFixed(2)} KB (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+    console.log(`📊 Original size: ${(file.size / 1024).toFixed(2)} KB`);
 
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Get original image dimensions
-    const originalMetadata = await sharp(buffer).metadata();
-    console.log(`📐 Original dimensions: ${originalMetadata.width}x${originalMetadata.height}`);
-
-    // COMPRESSION HAPPENS HERE
-    const startTime = Date.now();
-
+    // Optimize image locally before uploading
+    const startCompression = Date.now();
     const optimizedBuffer = await sharp(buffer)
       .resize(800, 800, {
         fit: 'inside',
         withoutEnlargement: true
       })
       .jpeg({
-        quality: 80,           // 80% quality - reduces size significantly
+        quality: 80,
         progressive: true,
         mozjpeg: true
       })
       .toBuffer();
 
-    const endTime = Date.now();
-    const compressionTime = endTime - startTime;
-
-    // Get optimized image dimensions
-    const optimizedMetadata = await sharp(optimizedBuffer).metadata();
-
-    // Calculate compression ratio
-    const originalSizeKB = file.size / 1024;
+    const compressionTime = Date.now() - startCompression;
     const optimizedSizeKB = optimizedBuffer.length / 1024;
     const compressionRatio = ((file.size - optimizedBuffer.length) / file.size * 100).toFixed(1);
-    const sizeSavedKB = (file.size - optimizedBuffer.length) / 1024;
 
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-    console.log(`✅ COMPRESSION RESULTS:`);
-    console.log(`📏 Optimized dimensions: ${optimizedMetadata.width}x${optimizedMetadata.height}`);
-    console.log(`📊 Optimized size: ${optimizedSizeKB.toFixed(2)} KB (${(optimizedSizeKB / 1024).toFixed(2)} MB)`);
-    console.log(`💾 Size saved: ${sizeSavedKB.toFixed(2)} KB`);
-    console.log(`📉 Compression ratio: ${compressionRatio}%`);
-    console.log(`⏱️ Compression time: ${compressionTime}ms`);
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    console.log(`✅ Local compression: ${compressionRatio}% saved in ${compressionTime}ms`);
+    console.log(`📊 Compressed size: ${optimizedSizeKB.toFixed(2)} KB`);
 
-    // Visual comparison bar
-    const barLength = 30;
-    const originalBar = Math.round((originalSizeKB / (originalSizeKB + optimizedSizeKB)) * barLength);
-    const optimizedBar = barLength - originalBar;
-    console.log(`📊 Size comparison:`);
-    console.log(`   Original:  ${'█'.repeat(originalBar)} ${originalSizeKB.toFixed(0)}KB`);
-    console.log(`   Optimized: ${'█'.repeat(optimizedBar)} ${optimizedSizeKB.toFixed(0)}KB`);
-    console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+    // Upload to Cloudinary
+    const uploadStart = Date.now();
+    const base64Image = optimizedBuffer.toString('base64');
+    const dataURI = `data:image/jpeg;base64,${base64Image}`;
 
-    // Convert to base64 (temporary - should use cloud storage in production)
-    const base64Image = `data:image/jpeg;base64,${optimizedBuffer.toString('base64')}`;
+    // Generate a unique filename
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const publicId = `creator-portal/products/${timestamp}_${randomId}`;
 
+    const result = await cloudinary.uploader.upload(dataURI, {
+      public_id: publicId,
+      folder: 'creator-portal/products',
+      transformation: [
+        { quality: 'auto:good' },
+        { fetch_format: 'auto' }
+      ],
+      eager: [
+        { width: 400, height: 400, crop: 'fill', quality: 'auto' },
+        { width: 200, height: 200, crop: 'fill', quality: 'auto' }
+      ],
+      eager_async: true,
+    });
+
+    const uploadTime = Date.now() - uploadStart;
+
+    console.log(`✅ Cloudinary upload: ${uploadTime}ms`);
+    console.log(`🖼️ Public ID: ${result.public_id}`);
+    console.log(`🔗 URL: ${result.secure_url}`);
+    console.log(`📏 Final dimensions: ${result.width}x${result.height}`);
+    console.log(`📊 Final size: ${(result.bytes / 1024).toFixed(2)} KB`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // Return the Cloudinary URL
     return NextResponse.json({
       success: true,
-      url: base64Image,
-      originalSize: originalSizeKB.toFixed(2),
-      optimizedSize: optimizedSizeKB.toFixed(2),
+      url: result.secure_url,
+      publicId: result.public_id,
+      originalSize: (file.size / 1024).toFixed(2),
+      optimizedSize: (result.bytes / 1024).toFixed(2),
       compression: `${compressionRatio}%`,
-      originalDimensions: `${originalMetadata.width}x${originalMetadata.height}`,
-      optimizedDimensions: `${optimizedMetadata.width}x${optimizedMetadata.height}`,
-      compressionTime: `${compressionTime}ms`
+      totalTime: Date.now() - startTime,
+      format: result.format,
+      width: result.width,
+      height: result.height
     });
-    
+
   } catch (error) {
     console.error('Upload error:', error);
-    return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Upload failed: ' + (error as Error).message
+    }, { status: 500 });
   }
 }

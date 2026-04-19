@@ -1,3 +1,4 @@
+// lib/templates/index.ts
 import { defaultConfig, defaultTemplate } from '@/lib/defaults';
 
 export interface Template {
@@ -11,158 +12,197 @@ export interface Template {
   defaultTextColor: string;
   previewBadge: string;
   category: string;
+  gradientColors: {
+    start: string;
+    end: string;
+  };
 }
 
 export const templates: Template[] = [
-      defaultTemplate,
-
-
-  // FREE TEMPLATES (2) - Soft pastel gradients
+  // FREE TEMPLATES (4) - Beautiful, visible gradients
   {
- id: 'template14',
-  name: 'Pure White',
-  description: 'Clean white background',
-  isPremium: false,
-  gradient: 'from-white to-gray-100',
-  textColor: 'text-gray-900',
-  defaultBackground: '#ffffff',
-  defaultTextColor: '#1a1a1a',
-  previewBadge: 'Free',
-  category: 'Light',
-  },
-  {
-    id: 'template2',
-    name: 'Peach Dream',
-    description: 'Warm peach gradient',
+    id: 'template1',
+    name: 'Sunrise Morning',
+    description: 'Warm orange to soft yellow gradient',
     isPremium: false,
-    gradient: 'from-orange-100 via-orange-50 to-amber-100',
+    gradient: 'from-orange-400 via-orange-300 to-yellow-200',
     textColor: 'text-gray-800',
-    defaultBackground: '#ffedd5',
+    defaultBackground: '#fb923c',
     defaultTextColor: '#1f2937',
     previewBadge: 'Free',
     category: 'Warm',
+    gradientColors: { start: '#fb923c', end: '#fde047' }
   },
-
-  // PREMIUM TEMPLATES (10) - Soft, elegant gradients
+  {
+    id: 'template2',
+    name: 'Ocean Breeze',
+    description: 'Deep blue to soft cyan gradient',
+    isPremium: false,
+    gradient: 'from-blue-600 via-blue-500 to-cyan-300',
+    textColor: 'text-white',
+    defaultBackground: '#2563eb',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Free',
+    category: 'Cool',
+    gradientColors: { start: '#2563eb', end: '#67e8f9' }
+  },
   {
     id: 'template3',
-    name: 'Mint Breeze',
-    description: 'Fresh mint gradient',
-    isPremium: true,
-    gradient: 'from-teal-100 via-teal-50 to-cyan-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#ccfbf1',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Fresh',
+    name: 'Purple Dream',
+    description: 'Rich purple to soft pink gradient',
+    isPremium: false,
+    gradient: 'from-purple-600 via-purple-500 to-pink-400',
+    textColor: 'text-white',
+    defaultBackground: '#9333ea',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Free',
+    category: 'Vibrant',
+    gradientColors: { start: '#9333ea', end: '#f472b6' }
   },
   {
     id: 'template4',
-    name: 'Lavender Mist',
-    description: 'Calm lavender gradient',
-    isPremium: true,
-    gradient: 'from-purple-100 via-purple-50 to-pink-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#f3e8ff',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Calm',
+    name: 'Forest Walk',
+    description: 'Fresh green to mint gradient',
+    isPremium: false,
+    gradient: 'from-green-600 via-green-500 to-emerald-300',
+    textColor: 'text-white',
+    defaultBackground: '#16a34a',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Free',
+    category: 'Nature',
+    gradientColors: { start: '#16a34a', end: '#6ee7b7' }
   },
+
+  // PREMIUM TEMPLATES (10) - Stunning, eye-catching gradients
   {
     id: 'template5',
-    name: 'Sage Green',
-    description: 'Natural sage gradient',
+    name: 'Midnight Aurora',
+    description: 'Deep night sky with aurora vibes',
     isPremium: true,
-    gradient: 'from-green-100 via-green-50 to-emerald-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#dcfce7',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Nature',
-  },
-  {
-    id: 'template6',
-    name: 'Apricot Glow',
-    description: 'Soft apricot gradient',
-    isPremium: true,
-    gradient: 'from-amber-100 via-amber-50 to-orange-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#fef3c7',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Warm',
-  },
-  {
-    id: 'template7',
-    name: 'Ocean Wave',
-    description: 'Calm ocean gradient',
-    isPremium: true,
-    gradient: 'from-cyan-100 via-cyan-50 to-blue-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#cffafe',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Ocean',
-  },
-  {
-    id: 'template8',
-    name: 'Berry Sorbet',
-    description: 'Sweet berry gradient',
-    isPremium: true,
-    gradient: 'from-rose-100 via-rose-50 to-pink-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#ffe4e6',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Sweet',
-  },
-  {
-    id: 'template9',
-    name: 'Honey Drizzle',
-    description: 'Warm honey gradient',
-    isPremium: true,
-    gradient: 'from-yellow-100 via-yellow-50 to-amber-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#fef9c3',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Warm',
-  },
-  {
-    id: 'template10',
-    name: 'Arctic Frost',
-    description: 'Cool arctic gradient',
-    isPremium: true,
-    gradient: 'from-blue-100 via-blue-50 to-white',
-    textColor: 'text-gray-800',
-    defaultBackground: '#dbeafe',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Cool',
-  },
-  {
-    id: 'template11',
-    name: 'Spring Bloom',
-    description: 'Floral spring gradient',
-    isPremium: true,
-    gradient: 'from-pink-100 via-pink-50 to-green-100',
-    textColor: 'text-gray-800',
-    defaultBackground: '#fce7f3',
-    defaultTextColor: '#1f2937',
-    previewBadge: 'Premium',
-    category: 'Floral',
-  },
-  {
-    id: 'template12',
-    name: 'Midnight Sky',
-    description: 'Deep night gradient',
-    isPremium: true,
-    gradient: 'from-gray-800 via-gray-700 to-gray-900',
+    gradient: 'from-gray-900 via-purple-900 to-indigo-800',
     textColor: 'text-white',
-    defaultBackground: '#1f2937',
+    defaultBackground: '#111827',
     defaultTextColor: '#ffffff',
     previewBadge: 'Premium',
     category: 'Dark',
+    gradientColors: { start: '#111827', end: '#1e1b4b' }
+  },
+  {
+    id: 'template6',
+    name: 'Sunset Paradise',
+    description: 'Vibrant sunset colors',
+    isPremium: true,
+    gradient: 'from-rose-600 via-orange-500 to-yellow-400',
+    textColor: 'text-white',
+    defaultBackground: '#e11d48',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Premium',
+    category: 'Sunset',
+    gradientColors: { start: '#e11d48', end: '#facc15' }
+  },
+  {
+    id: 'template7',
+    name: 'Neon Vibes',
+    description: 'Electric neon gradient',
+    isPremium: true,
+    gradient: 'from-cyan-400 via-blue-500 to-purple-600',
+    textColor: 'text-white',
+    defaultBackground: '#22d3ee',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Premium',
+    category: 'Neon',
+    gradientColors: { start: '#22d3ee', end: '#7c3aed' }
+  },
+  {
+    id: 'template8',
+    name: 'Berry Smoothie',
+    description: 'Sweet berry blend',
+    isPremium: true,
+    gradient: 'from-pink-500 via-rose-400 to-red-400',
+    textColor: 'text-white',
+    defaultBackground: '#ec4899',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Premium',
+    category: 'Sweet',
+    gradientColors: { start: '#ec4899', end: '#f87171' }
+  },
+  {
+    id: 'template9',
+    name: 'Tropical Lagoon',
+    description: 'Turquoise to teal paradise',
+    isPremium: true,
+    gradient: 'from-teal-400 via-cyan-500 to-blue-500',
+    textColor: 'text-white',
+    defaultBackground: '#2dd4bf',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Premium',
+    category: 'Tropical',
+    gradientColors: { start: '#2dd4bf', end: '#3b82f6' }
+  },
+  {
+    id: 'template10',
+    name: 'Golden Hour',
+    description: 'Warm golden gradient',
+    isPremium: true,
+    gradient: 'from-amber-400 via-yellow-500 to-orange-500',
+    textColor: 'text-gray-800',
+    defaultBackground: '#fbbf24',
+    defaultTextColor: '#1f2937',
+    previewBadge: 'Premium',
+    category: 'Golden',
+    gradientColors: { start: '#fbbf24', end: '#f97316' }
+  },
+  {
+    id: 'template11',
+    name: 'Cosmic Space',
+    description: 'Deep space galaxy gradient',
+    isPremium: true,
+    gradient: 'from-indigo-900 via-purple-900 to-pink-900',
+    textColor: 'text-white',
+    defaultBackground: '#312e81',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Premium',
+    category: 'Cosmic',
+    gradientColors: { start: '#312e81', end: '#831843' }
+  },
+  {
+    id: 'template12',
+    name: 'Minty Fresh',
+    description: 'Cool mint to fresh green',
+    isPremium: true,
+    gradient: 'from-emerald-400 via-green-400 to-teal-400',
+    textColor: 'text-gray-800',
+    defaultBackground: '#34d399',
+    defaultTextColor: '#1f2937',
+    previewBadge: 'Premium',
+    category: 'Fresh',
+    gradientColors: { start: '#34d399', end: '#2dd4bf' }
+  },
+  {
+    id: 'template13',
+    name: 'Lavender Fields',
+    description: 'Soft lavender to purple',
+    isPremium: true,
+    gradient: 'from-purple-300 via-purple-400 to-indigo-400',
+    textColor: 'text-gray-800',
+    defaultBackground: '#d8b4fe',
+    defaultTextColor: '#1f2937',
+    previewBadge: 'Premium',
+    category: 'Calm',
+    gradientColors: { start: '#d8b4fe', end: '#818cf8' }
+  },
+  {
+    id: 'template14',
+    name: 'Fire & Ice',
+    description: 'Contrasting hot and cool',
+    isPremium: true,
+    gradient: 'from-red-500 via-orange-500 to-blue-500',
+    textColor: 'text-white',
+    defaultBackground: '#ef4444',
+    defaultTextColor: '#ffffff',
+    previewBadge: 'Premium',
+    category: 'Contrast',
+    gradientColors: { start: '#ef4444', end: '#3b82f6' }
   },
 ];
 
@@ -174,14 +214,10 @@ export const getTemplateById = (id: string): Template => {
     console.warn(`⚠️ Template ${id} not found, using default`);
     const defaultTemplate = templates[0];
     console.log(`📌 Using default template: ${defaultTemplate.id} - ${defaultTemplate.name}`);
-    console.log(`   Background: ${defaultTemplate.defaultBackground}`);
-    console.log(`   Text Color: ${defaultTemplate.defaultTextColor}`);
     return defaultTemplate;
   }
 
   console.log(`✅ Found template: ${template.id} - ${template.name}`);
-  console.log(`   Background: ${template.defaultBackground}`);
-  console.log(`   Text Color: ${template.defaultTextColor}`);
   return template;
 };
 

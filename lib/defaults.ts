@@ -1,33 +1,34 @@
-
+// lib/defaults.ts
 export const defaultConfig = {
   // Template defaults
   templateId: 'template1',
   primaryColor: '#f5f5f5',
-  textColor: '#1a1a1a',        // Add this line
+  textColor: '#1a1a1a',
   fontFamily: 'font-sans',
-  backgroundType: 'image',
-  backgroundImage: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800',
+  backgroundType: 'image',  // Use image as default
+  backgroundImage: '/images/default-bg.jpg',  // Path to image in public folder
+  gradientStart: '#fb923c',
+  gradientEnd: '#fde047',
   defaultBackground: '#f5f5f5',
   defaultTextColor: '#1a1a1a',
 
   // Portal defaults
   title: 'My Creator Portal',
   bio: '',
-  
+
   // Limits
   freeLinksLimit: 1,
   freeProductsLimit: 4,
   premiumLinksLimit: 10,
   premiumProductsLimit: 50,
-  
+
   // Template gradients mapping
   gradients: {
-    'template1': 'from-gray-100 to-white',
-    'template2': 'from-gray-50 to-gray-100',
+    'template1': 'from-orange-400 via-orange-300 to-yellow-200',
+    'template2': 'from-blue-600 via-blue-500 to-cyan-300',
   }
 };
 
-// Template definitions with defaults
 export const defaultTemplate = {
   id: defaultConfig.templateId,
   name: 'Minimal Light',
@@ -38,5 +39,9 @@ export const defaultTemplate = {
   defaultBackground: defaultConfig.primaryColor,
   defaultTextColor: defaultConfig.textColor,
   previewBadge: 'Free',
-  category: 'Minimal',
+  category: 'Light',
+  gradientColors: {
+    start: defaultConfig.gradientStart,
+    end: defaultConfig.gradientEnd
+  }
 };

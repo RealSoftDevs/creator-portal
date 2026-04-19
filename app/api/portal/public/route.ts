@@ -1,8 +1,10 @@
+// app/api/portal/public/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
-
+// app/api/portal/public/route.ts
+// app/api/portal/public/route.ts - Ensure gradients are returned
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -11,7 +13,6 @@ export async function GET(request: NextRequest) {
 
     let portal = null;
 
-    // Try to find by username first (premium custom URL)
     if (username) {
       portal = await prisma.portal.findFirst({
         where: {
@@ -35,7 +36,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // If not found by username, try by slug (free tier)
     if (!portal && slug) {
       portal = await prisma.portal.findUnique({
         where: { slug: slug },
@@ -56,10 +56,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
 
-    // Return the user's preferred name
     const displayName = portal.user.name || portal.slug;
 
-    // IMPORTANT: Use MAIN fields, NOT public prefixed fields
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('🌐 PUBLIC API - Returning Settings');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('backgroundType:', portal.backgroundType);
+    console.log('gradientStart:', portal.gradientStart);
+    console.log('gradientEnd:', portal.gradientEnd);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     return NextResponse.json({
       title: portal.title,
       bio: portal.bio,
@@ -69,12 +75,14 @@ export async function GET(request: NextRequest) {
       products: portal.products,
       templateId: portal.templateId || 'template1',
       primaryColor: portal.primaryColor || '#f5f5f5',
-      backgroundType: portal.backgroundType || 'image',  // ← Use main field
-      gradientStart: portal.gradientStart,
-      gradientEnd: portal.gradientEnd,
-      backgroundImage: portal.backgroundImage,  // ← Use main field
-      textColor: portal.textColor,
-      fontFamily: portal.fontFamily || 'font-sans'
+      backgroundType: portal.backgroundType || 'gradient',
+      gradientStart: portal.gradientStart || '#fb923c',
+      gradientEnd: portal.gradientEnd || '#fde047',
+      backgroundImage: portal.backgroundImage,
+      textColor: portal.textColor || '#1a1a1a',
+      fontFamily: portal.fontFamily || 'font-sans',
+      isPremium: portal.user.isPremium,
+      customUsername: portal.user.name !== portal.slug ? portal.user.name : null
     });
     
   } catch (error) {

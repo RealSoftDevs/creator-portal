@@ -1,17 +1,21 @@
+// app/view/page.tsx
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getTemplateById } from '@/lib/templates/index';
 import PlatformIcon from '@/app/components/PlatformIcon';
 import CloudinaryImage from '@/app/components/CloudinaryImage';
 import { useEffect, useState, Suspense } from 'react';
 
+// Define interfaces
 interface SocialLink {
   id: string;
   title: string;
   url: string;
   platform?: string;
   iconUrl?: string;
+  clicks?: number;
+  order?: number;
 }
 
 interface Product {
@@ -28,6 +32,7 @@ interface PortalData {
   title: string;
   bio: string;
   userName: string;
+  slug: string;
   links: SocialLink[];
   products: Product[];
   templateId?: string;
@@ -38,6 +43,8 @@ interface PortalData {
   gradientEnd?: string;
   textColor?: string;
   fontFamily?: string;
+  isPremium?: boolean;
+  customUsername?: string | null;
 }
 
 // Platform background colors
@@ -73,6 +80,7 @@ const getPlatformColor = (platform: string): string => {
 
 function ViewContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const slug = searchParams.get('slug');
   const [portal, setPortal] = useState<PortalData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,31 +97,44 @@ function ViewContent() {
       .then(res => res.json())
       .then(data => {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log('👁️ PUBLIC PAGE LOADING');
+        console.log('👁️ PUBLIC PAGE - Background Debug');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(`Portal slug: ${slug}`);
-        console.log(`Template ID from API: ${data.templateId}`);
-        console.log(`Primary Color from API: ${data.primaryColor}`);
-        console.log(`Background Type from API: ${data.backgroundType}`);
-        console.log(`Background Image from API: ${data.backgroundImage || 'none'}`);
+        console.log('backgroundType:', data.backgroundType);
+        console.log('backgroundImage:', data.backgroundImage);
+        console.log('primaryColor:', data.primaryColor);
+        console.log('isPremium:', data.isPremium);
+        console.log('customUsername:', data.customUsername);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
         if (data.error) {
           setError(true);
-        } else {
-          setPortal(data);
+          setLoading(false);
+          return;
         }
+
+        // If user is premium and has a custom username (different from slug), redirect
+        if (data.isPremium && data.customUsername && data.customUsername !== slug) {
+          console.log(`🔄 Redirecting premium user from slug to custom URL: /view/${data.customUsername}`);
+          router.replace(`/view/${data.customUsername}`);
+          return;
+        }
+
+        setPortal(data);
         setLoading(false);
       })
       .catch(() => {
         setError(true);
         setLoading(false);
       });
-  }, [slug]);
+  }, [slug, router]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center text-gray-500">
-        Loading...
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
       </div>
     );
   }
@@ -129,28 +150,38 @@ function ViewContent() {
     );
   }
 
-  // Get the template - ONLY ONCE
   const template = getTemplateById(portal.templateId || 'template1');
   const fontFamilyClass = portal.fontFamily || 'font-sans';
 
   // Build background style
   const backgroundStyle: React.CSSProperties = {};
 
-  if (portal.backgroundType === 'image' && portal.backgroundImage) {
-    backgroundStyle.backgroundImage = `url(${portal.backgroundImage})`;
+  // Process background image URL if needed
+  let backgroundImageUrl = portal.backgroundImage;
+  if (backgroundImageUrl && !backgroundImageUrl.startsWith('http') && !backgroundImageUrl.startsWith('/')) {
+    backgroundImageUrl = `/${backgroundImageUrl}`;
+  }
+
+  console.log('🎨 Applying background style:');
+  console.log('  Type:', portal.backgroundType);
+  console.log('  Image URL:', backgroundImageUrl);
+  console.log('  Color:', portal.primaryColor);
+
+  if (portal.backgroundType === 'image' && backgroundImageUrl) {
+    backgroundStyle.backgroundImage = `url(${backgroundImageUrl})`;
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.backgroundAttachment = 'fixed';
-    console.log('🎨 Using background image:', portal.backgroundImage);
+    backgroundStyle.minHeight = '100vh';
+    console.log('✅ Using background image');
   } else if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
     backgroundStyle.background = `linear-gradient(135deg, ${portal.gradientStart}, ${portal.gradientEnd})`;
-    console.log('🎨 Using gradient background');
+    console.log('✅ Using gradient');
   } else {
     backgroundStyle.backgroundColor = portal.primaryColor || template.defaultBackground;
-    console.log('🎨 Using solid color:', backgroundStyle.backgroundColor);
+    console.log('✅ Using solid color:', backgroundStyle.backgroundColor);
   }
 
-  // Text color
   const displayTextColor = portal.textColor || template.defaultTextColor;
   const customTextColorStyle = { color: displayTextColor };
   const socialAccounts = portal.links || [];
@@ -158,8 +189,8 @@ function ViewContent() {
 
   return (
     <div className={`min-h-screen ${fontFamilyClass}`} style={backgroundStyle}>
-      {/* Overlay for better readability when using background image */}
-      {portal.backgroundImage && (
+      {/* Semi-transparent overlay for better text readability on image backgrounds */}
+      {portal.backgroundType === 'image' && backgroundImageUrl && (
         <div className="fixed inset-0 bg-black/30 pointer-events-none" />
       )}
 
@@ -175,7 +206,7 @@ function ViewContent() {
           )}
         </div>
 
-        {/* Product Gallery */}
+        {/* Product Gallery with Optimized Images */}
         {products.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2" style={customTextColorStyle}>
@@ -253,7 +284,11 @@ function ViewContent() {
 // Main export with Suspense boundary
 export default function ViewPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    }>
       <ViewContent />
     </Suspense>
   );

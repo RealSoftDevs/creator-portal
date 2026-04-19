@@ -1,3 +1,4 @@
+// app/view/[username]/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -5,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { getTemplateById } from '@/lib/templates/index';
 import PlatformIcon from '@/app/components/PlatformIcon';
 
+// Define interfaces
 interface SocialLink {
   id: string;
   title: string;
@@ -42,30 +44,30 @@ interface PortalData {
 // Platform background colors
 const getPlatformColor = (platform: string): string => {
   const colors: Record<string, string> = {
-    instagram: 'bg-[#E4405F]',
-    youtube: 'bg-[#FF0000]',
-    tiktok: 'bg-[#000000]',
-    facebook: 'bg-[#1877F2]',
-    twitter: 'bg-[#000000]',
-    x: 'bg-[#000000]',
-    linkedin: 'bg-[#0A66C2]',
-    github: 'bg-[#181717]',
-    twitch: 'bg-[#9146FF]',
-    discord: 'bg-[#5865F2]',
-    whatsapp: 'bg-[#25D366]',
-    telegram: 'bg-[#26A5E4]',
-    amazon: 'bg-[#FF9900]',
-    myntra: 'bg-[#E91E63]',
-    flipkart: 'bg-[#2874F0]',
-    spotify: 'bg-[#1DB954]',
-    apple: 'bg-[#000000]',
-    snapchat: 'bg-[#FFFC00]',
-    pinterest: 'bg-[#BD081C]',
-    reddit: 'bg-[#FF4500]',
-    email: 'bg-[#D14836]',
-    phone: 'bg-[#25D366]',
-    website: 'bg-[#6B7280]',
-    linktree: 'bg-[#39E09B]'
+    instagram: 'bg-gradient-to-r from-purple-500 to-pink-500',
+    youtube: 'bg-red-600',
+    tiktok: 'bg-black',
+    facebook: 'bg-blue-600',
+    twitter: 'bg-blue-400',
+    x: 'bg-blue-400',
+    linkedin: 'bg-blue-700',
+    github: 'bg-gray-800',
+    twitch: 'bg-purple-600',
+    discord: 'bg-indigo-500',
+    whatsapp: 'bg-green-500',
+    telegram: 'bg-blue-500',
+    amazon: 'bg-orange-500',
+    myntra: 'bg-pink-600',
+    flipkart: 'bg-blue-800',
+    spotify: 'bg-green-600',
+    apple: 'bg-black',
+    snapchat: 'bg-yellow-400',
+    pinterest: 'bg-red-700',
+    reddit: 'bg-orange-600',
+    email: 'bg-gray-500',
+    phone: 'bg-green-500',
+    website: 'bg-gray-600',
+    linktree: 'bg-green-600'
   };
   return colors[platform.toLowerCase()] || 'bg-gray-600';
 };
@@ -135,13 +137,18 @@ export default function UserViewPage() {
 
   const backgroundStyle: React.CSSProperties = {};
 
-  if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
-    backgroundStyle.background = `linear-gradient(135deg, ${portal.gradientStart}, ${portal.gradientEnd})`;
-  } else if (portal.backgroundType === 'image' && portal.backgroundImage) {
-    backgroundStyle.backgroundImage = `url(${portal.backgroundImage})`;
+  let backgroundImageUrl = portal.backgroundImage;
+  if (backgroundImageUrl && !backgroundImageUrl.startsWith('http') && !backgroundImageUrl.startsWith('/')) {
+    backgroundImageUrl = `/${backgroundImageUrl}`;
+  }
+
+  if (portal.backgroundType === 'image' && backgroundImageUrl) {
+    backgroundStyle.backgroundImage = `url(${backgroundImageUrl})`;
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.backgroundAttachment = 'fixed';
+  } else if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
+    backgroundStyle.background = `linear-gradient(135deg, ${portal.gradientStart}, ${portal.gradientEnd})`;
   } else {
     backgroundStyle.backgroundColor = portal.primaryColor || template.defaultBackground;
   }

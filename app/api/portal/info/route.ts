@@ -1,3 +1,4 @@
+// app/api/portal/info/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verifyToken } from '@/lib/auth';
@@ -7,41 +8,44 @@ const prisma = new PrismaClient();
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const userId = await verifyToken(token);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { portal: true }
     });
-    
+
     if (!user || !user.portal) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
-    
+
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📡 INFO API - Portal Data');
+    console.log('📡 INFO API - All Background Fields');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('templateId:', user.portal.templateId);
-    console.log('primaryColor:', user.portal.primaryColor);
-    console.log('backgroundType:', user.portal.backgroundType);
-    console.log('backgroundImage:', user.portal.backgroundImage);
+    console.log('MAIN backgroundType:', user.portal.backgroundType);
+    console.log('MAIN backgroundImage:', user.portal.backgroundImage);
+    console.log('MAIN primaryColor:', user.portal.primaryColor);
+    console.log('PUBLIC backgroundType:', user.portal.publicBackgroundType);
+    console.log('PUBLIC backgroundImage:', user.portal.publicBackgroundImage);
+    console.log('ADMIN backgroundType:', user.portal.adminBackgroundType);
+    console.log('ADMIN backgroundImage:', user.portal.adminBackgroundImage);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // Return ALL portal settings
+    // Return ALL portal settings - use MAIN fields for public page
     return NextResponse.json({
       slug: user.portal.slug,
       title: user.portal.title,
       bio: user.portal.bio,
       userName: user.name,
-      // Main settings
+      // MAIN fields (used for public page)
       templateId: user.portal.templateId,
       primaryColor: user.portal.primaryColor,
       backgroundType: user.portal.backgroundType,
@@ -50,7 +54,7 @@ export async function GET(request: NextRequest) {
       gradientEnd: user.portal.gradientEnd,
       textColor: user.portal.textColor,
       fontFamily: user.portal.fontFamily,
-      // Admin settings (for premium users)
+      // Admin settings (for studio display)
       adminTemplateId: user.portal.adminTemplateId,
       adminPrimaryColor: user.portal.adminPrimaryColor,
       adminBackgroundType: user.portal.adminBackgroundType,

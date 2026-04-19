@@ -1,0 +1,48 @@
+Folder PATH listing for volume Soft
+Volume serial number is 6C32-8D98
+D:.
++---app
+¦   +---api
+¦   ¦   +---auth
+¦   ¦   ¦   +---login
+¦   ¦   ¦   +---logout
+¦   ¦   ¦   +---register
+¦   ¦   +---debug
+¦   ¦   ¦   +---defaults
+¦   ¦   +---payment
+¦   ¦   ¦   +---create-order
+¦   ¦   ¦   +---verify
+¦   ¦   +---portal
+¦   ¦   ¦   +---info
+¦   ¦   ¦   +---links
+¦   ¦   ¦   +---products
+¦   ¦   ¦   +---public
+¦   ¦   ¦   ¦   +---[slug]
+¦   ¦   ¦   +---reset-theme
+¦   ¦   ¦   +---update-template
+¦   ¦   ¦   +---update-username
+¦   ¦   ¦   +---verify
+¦   ¦   +---test
+¦   ¦   +---upload
+¦   ¦   +---user
+¦   ¦       +---make-premium
+¦   ¦       +---status
+¦   +---components
+¦   ¦   +---template-selector
+¦   +---dashboard
+¦   +---hooks
+¦   +---login
+¦   +---register
+¦   +---studio
+¦   ¦   +---components
+¦   ¦   +---hooks
+¦   +---view
+¦       +---[username]
++---lib
+¦   +---templates
+¦   +---types
++---prisma
++---public
+¦   +---images
+¦   +---uploads
++---types

@@ -1,3 +1,4 @@
+// app/api/auth/register/route.ts
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { hashPassword, createToken } from '@/lib/auth';
@@ -13,10 +14,10 @@ export async function POST(request: Request) {
     console.log('📝 NEW USER REGISTRATION');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`User email: ${email}`);
-    console.log(`Using templateId: ${defaultConfig.templateId}`);
-    console.log(`Using primaryColor: ${defaultConfig.primaryColor}`);
-    console.log(`Using backgroundType: ${defaultConfig.backgroundType || 'color'}`);
-    console.log(`Using backgroundImage: ${defaultConfig.backgroundImage || 'none'}`);
+    console.log(`Using backgroundType: ${defaultConfig.backgroundType}`);
+    console.log(`Using backgroundImage: ${defaultConfig.backgroundImage}`);
+    console.log(`Using gradientStart: ${defaultConfig.gradientStart}`);
+    console.log(`Using gradientEnd: ${defaultConfig.gradientEnd}`);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
@@ -39,8 +40,30 @@ export async function POST(request: Request) {
             slug: slug,
             templateId: defaultConfig.templateId,
             primaryColor: defaultConfig.primaryColor,
-            backgroundType: defaultConfig.backgroundType || 'image',
+            backgroundType: defaultConfig.backgroundType,
             backgroundImage: defaultConfig.backgroundImage,
+            gradientStart: defaultConfig.gradientStart,
+            gradientEnd: defaultConfig.gradientEnd,
+            textColor: defaultConfig.textColor,
+            fontFamily: defaultConfig.fontFamily,
+            // ALSO SET ADMIN FIELDS to the same defaults
+            adminTemplateId: defaultConfig.templateId,
+            adminPrimaryColor: defaultConfig.primaryColor,
+            adminBackgroundType: defaultConfig.backgroundType,
+            adminBackgroundImage: defaultConfig.backgroundImage,
+            adminGradientStart: defaultConfig.gradientStart,
+            adminGradientEnd: defaultConfig.gradientEnd,
+            adminTextColor: defaultConfig.textColor,
+            adminFontFamily: defaultConfig.fontFamily,
+            // ALSO SET PUBLIC FIELDS
+            publicTemplateId: defaultConfig.templateId,
+            publicPrimaryColor: defaultConfig.primaryColor,
+            publicBackgroundType: defaultConfig.backgroundType,
+            publicBackgroundImage: defaultConfig.backgroundImage,
+            publicGradientStart: defaultConfig.gradientStart,
+            publicGradientEnd: defaultConfig.gradientEnd,
+            publicTextColor: defaultConfig.textColor,
+            publicFontFamily: defaultConfig.fontFamily,
           }
         }
       },
@@ -49,10 +72,10 @@ export async function POST(request: Request) {
 
     console.log(`✅ User created with ID: ${user.id}`);
     console.log(`✅ Portal created with ID: ${user.portal?.id}`);
-    console.log(`   Template: ${user.portal?.templateId}`);
-    console.log(`   Primary Color: ${user.portal?.primaryColor}`);
     console.log(`   Background Type: ${user.portal?.backgroundType}`);
-    console.log(`   Background Image: ${user.portal?.backgroundImage || 'none'}`);
+    console.log(`   Background Image: ${user.portal?.backgroundImage}`);
+    console.log(`   Admin Background Type: ${user.portal?.adminBackgroundType}`);
+    console.log(`   Admin Background Image: ${user.portal?.adminBackgroundImage}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const token = await createToken(user.id);
@@ -71,7 +94,7 @@ export async function POST(request: Request) {
     });
 
     return response;
-    
+
   } catch (error) {
     console.error('Registration error:', error);
     return NextResponse.json({ error: 'Something went wrong: ' + (error as Error).message }, { status: 500 });

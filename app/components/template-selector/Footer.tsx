@@ -1,4 +1,7 @@
+// app/components/template-selector/Footer.tsx
 'use client';
+
+import { Check, Sparkles } from 'lucide-react';
 
 interface FooterProps {
   applyToAll: boolean;
@@ -18,39 +21,53 @@ export default function Footer({
   onApplyToBoth
 }: FooterProps) {
   return (
-    <div className="sticky bottom-0 bg-white border-t p-2 rounded-b-2xl">
+    <div className="sticky bottom-0 bg-white border-t p-3 rounded-b-2xl">
       <div className="flex gap-2">
         {applyToAll ? (
-          // Single button for "Apply to Both"
           <button
             onClick={onApplyToBoth}
             disabled={applying}
-            className="w-full py-2 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition disabled:opacity-50"
+            className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {applying ? 'Applying...' : 'Apply to Both'}
+            {applying ? (
+              'Applying...'
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Apply to Both Pages
+              </>
+            )}
           </button>
         ) : (
-          // Two separate buttons
           <>
             <button
               onClick={onApplyToPublic}
               disabled={applying}
-              className="flex-1 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50"
+              className="flex-1 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition disabled:opacity-50 flex items-center justify-center gap-1"
             >
-              Apply to Public
+              {applying ? '...' : <Check className="w-4 h-4" />}
+              Public Page
             </button>
             <button
               onClick={onApplyToAdmin}
               disabled={applying || !isPremium}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${
-                isPremium ? 'bg-black text-white hover:bg-gray-800' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition disabled:opacity-50 flex items-center justify-center gap-1 ${
+                isPremium
+                  ? 'bg-gray-900 text-white hover:bg-gray-800'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Apply to Admin {!isPremium && '🔒'}
+              Admin Panel
+              {!isPremium && ' 🔒'}
             </button>
           </>
         )}
       </div>
+      {!isPremium && !applyToAll && (
+        <p className="text-[10px] text-gray-400 text-center mt-2">
+          Upgrade to Premium to customize admin panel separately
+        </p>
+      )}
     </div>
   );
 }

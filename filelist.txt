@@ -1,0 +1,12 @@
+@echo off
+set output=snapshot.txt
+echo PROJECT SNAPSHOT > %output%
+for %%e in (js py html css json md txt xml yml java cpp c h) do (
+    for /r %%f in (*.%%e) do (
+        echo ## FILE: %%f >> %output%
+        echo ` >> %output%
+        type "%%f" >> %output%
+        echo ` >> %output%
+        echo. >> %output%
+    )
+)
