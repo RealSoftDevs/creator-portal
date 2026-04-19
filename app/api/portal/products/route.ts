@@ -1,15 +1,16 @@
+// app/api/portal/products/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { verifyToken } from '@/lib/auth';
 
 const prisma = new PrismaClient();
 
-// Dummy products for display only (not saved to DB)
+// Local dummy products - using correct JPG paths
 const getDummyProducts = () => [
   {
     id: 'dummy1',
     title: 'Summer Fashion Dress',
-    imageUrl: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&h=400&fit=crop',
+    imageUrl: '/images/products/dummy1.jpg',  // Correct path for JPG
     buyLink: 'https://amazon.com',
     price: '$49.99',
     platform: 'amazon',
@@ -18,7 +19,7 @@ const getDummyProducts = () => [
   {
     id: 'dummy2',
     title: 'Designer Handbag',
-    imageUrl: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=400&h=400&fit=crop',
+    imageUrl: '/images/products/dummy2.jpg',  // Correct path for JPG
     buyLink: 'https://myntra.com',
     price: '$129.99',
     platform: 'myntra',
@@ -26,8 +27,8 @@ const getDummyProducts = () => [
   },
   {
     id: 'dummy3',
-    title: 'Sunglasses',
-    imageUrl: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400&h=400&fit=crop',
+    title: 'Premium Sunglasses',
+    imageUrl: '/images/products/dummy3.jpg',  // Correct path for JPG
     buyLink: 'https://amazon.com',
     price: '$89.99',
     platform: 'amazon',
@@ -36,7 +37,7 @@ const getDummyProducts = () => [
   {
     id: 'dummy4',
     title: 'Casual Sneakers',
-    imageUrl: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400&h=400&fit=crop',
+    imageUrl: '/images/products/dummy4.jpg',  // Correct path for JPG
     buyLink: 'https://flipkart.com',
     price: '$79.99',
     platform: 'flipkart',
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user || !user.portal) {
-      return NextResponse.json({ products: getDummyProducts() });
+      return NextResponse.json({ products: getDummyProducts(), isDummy: true });
     }
 
     let products = await prisma.product.findMany({
@@ -91,7 +92,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Products API error:', error);
-    return NextResponse.json({ products: getDummyProducts() });
+    return NextResponse.json({ products: getDummyProducts(), isDummy: true });
   }
 }
 
@@ -124,9 +125,10 @@ export async function POST(request: NextRequest) {
         title,
         imageUrl,
         buyLink,
-        price,
-        platform,
-        portalId: user.portal.id
+        price: price || null,
+        platform: platform || 'custom',
+        portalId: user.portal.id,
+        order: 0
       }
     });
 

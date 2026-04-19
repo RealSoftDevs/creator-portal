@@ -2,7 +2,7 @@
 'use client';
 
 import { CldImage } from 'next-cloudinary';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface CloudinaryImageProps {
   src: string;
@@ -12,7 +12,6 @@ interface CloudinaryImageProps {
   className?: string;
   priority?: boolean;
   quality?: number;
-  crop?: 'fill' | 'fit' | 'auto' | 'crop' | 'scale' | 'limit' | 'mfit' | 'lfill' | 'pad' | 'lpad' | 'mpad' | 'thumb' | 'imagga_crop' | 'imagga_scale' | 'fill_pad';
 }
 
 export default function CloudinaryImage({
@@ -22,64 +21,58 @@ export default function CloudinaryImage({
   height = 400,
   className = '',
   priority = false,
-  quality = 80,
-  crop = 'fill'
+  quality = 80
 }: CloudinaryImageProps) {
   const [error, setError] = useState(false);
-  const [imgSrc, setImgSrc] = useState<string>(src);
+  const [imageSrc, setImageSrc] = useState(src);
 
-  // Extract public ID from various Cloudinary URL formats
-  const getPublicId = (url: string): string | null => {
-    if (!url || !url.includes('cloudinary.com')) return null;
+  useEffect(() => {
+    // Reset error when src changes
+    setError(false);
+    setImageSrc(src);
+  }, [src]);
 
-    try {
-      // Handle different Cloudinary URL formats:
-      // Format 1: https://res.cloudinary.com/cloud_name/image/upload/v1234567890/creator-portal/products/abc123.jpg
-      // Format 2: https://res.cloudinary.com/cloud_name/image/upload/creator-portal/products/abc123.jpg
-
-      const urlParts = url.split('/');
-      // Find the upload marker position
-      const uploadIndex = urlParts.findIndex(part => part === 'upload');
-      if (uploadIndex === -1) return null;
-
-      // Get the part after 'upload' (skip version number if present)
-      let startIndex = uploadIndex + 1;
-      if (urlParts[startIndex] && urlParts[startIndex].startsWith('v')) {
-        startIndex++; // Skip version number like v1234567890
-      }
-
-      // Get the remaining path
-      const publicIdWithExt = urlParts.slice(startIndex).join('/');
-      // Remove file extension
-      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
-
-      return publicId;
-    } catch (err) {
-      console.error('Error extracting public ID:', err);
-      return null;
-    }
-  };
+  // For local images (JPG, PNG, etc. from public folder)
+  if (src && (src.startsWith('/images/') || src.startsWith('/api/')) && !error) {
+    return (
+      <img
+        src={imageSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        className={className}
+        loading={priority ? 'eager' : 'lazy'}
+        onError={(e) => {
+          console.error(`Failed to load image: ${src}`);
+          setError(true);
+          // Try to use a fallback
+          setImageSrc('https://placehold.co/400x400?text=Image+Not+Found');
+        }}
+        onLoad={() => {
+          console.log(`✅ Image loaded successfully: ${src}`);
+        }}
+      />
+    );
+  }
 
   // For non-Cloudinary images or when there's an error
   if (!src || (!src.includes('cloudinary.com') && !src.startsWith('data:image')) || error) {
-    // Return placeholder for broken images
+    // Return a nice placeholder with the product name
     return (
       <div
-        className={`bg-gray-100 flex items-center justify-center ${className}`}
+        className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${className}`}
         style={{ width: width ? `${width}px` : 'auto', height: height ? `${height}px` : 'auto', minHeight: '100px' }}
       >
         <div className="text-center">
-          <svg className="w-8 h-8 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <p className="text-xs text-gray-400 mt-1">Image not found</p>
+          <div className="text-4xl mb-1">🛍️</div>
+          <p className="text-xs text-gray-400">{alt || 'Product image'}</p>
         </div>
       </div>
     );
   }
 
-  // For data URLs (base64) or external URLs
-  if (src.startsWith('data:image') || (src.startsWith('http') && !src.includes('cloudinary.com'))) {
+  // For data URLs (base64)
+  if (src.startsWith('data:image')) {
     return (
       <img
         src={src}
@@ -92,10 +85,29 @@ export default function CloudinaryImage({
   }
 
   // For Cloudinary images
+  const getPublicId = (url: string): string | null => {
+    try {
+      const urlParts = url.split('/');
+      const uploadIndex = urlParts.findIndex(part => part === 'upload');
+      if (uploadIndex === -1) return null;
+
+      let startIndex = uploadIndex + 1;
+      if (urlParts[startIndex] && urlParts[startIndex].startsWith('v')) {
+        startIndex++;
+      }
+
+      const publicIdWithExt = urlParts.slice(startIndex).join('/');
+      const publicId = publicIdWithExt.replace(/\.[^/.]+$/, '');
+      return publicId;
+    } catch (err) {
+      console.error('Error extracting public ID:', err);
+      return null;
+    }
+  };
+
   const publicId = getPublicId(src);
 
   if (!publicId) {
-    // Fallback to regular img if can't extract public ID
     return (
       <img
         src={src}
@@ -107,14 +119,12 @@ export default function CloudinaryImage({
     );
   }
 
-  // Use Cloudinary for optimized delivery
   return (
     <CldImage
       src={publicId}
       alt={alt}
       width={width}
       height={height}
-      crop={crop}
       quality={quality}
       format="auto"
       loading={priority ? 'eager' : 'lazy'}

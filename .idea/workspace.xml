@@ -5,64 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="16c32d87-c3d0-486e-a843-119911e5d2e9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app.zip" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/api/image-proxy/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/api/images/list/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/api/portal/background-check/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/api/portal/reset-theme/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/api/portal/sync-background/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/components/OptimizedImage.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/studio/components/LoadingSkeleton.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/filelist.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/cloudinary.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/debug.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/imageHelper.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/project_snapshot.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/proxy_ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/default-bg.svg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/public/images/default-bg.jpg" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/scripts/migrate-images-to-cloudinary.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tree.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/caches/deviceStreaming.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/deviceManager.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/upload.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/test-images/page.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/manage_users.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/auth/login/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/auth/login/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/api/auth/register/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/auth/register/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/info/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/info/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/public/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/public/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/update-template/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/update-template/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/upload/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/upload/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/portal/products/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/products/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/components/CloudinaryImage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/CloudinaryImage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/TemplateSelectorModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/TemplateSelectorModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/template-selector/Footer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/template-selector/Footer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/template-selector/Header.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/template-selector/Header.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/template-selector/LivePreview.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/template-selector/LivePreview.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/template-selector/TemplatesGrid.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/template-selector/TemplatesGrid.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/dashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/login/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/register/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/register/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/components/AddLinkModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/AddLinkModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/components/AddProductModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/AddProductModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/components/LinksSection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/LinksSection.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/view/[username]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/view/[username]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/view/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/view/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/delete-user.js" beforeDir="false" afterPath="$PROJECT_DIR$/delete-user.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/defaults.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/defaults.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/templates/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/templates/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/middleware.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/proxy.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/migrations/20260415080322_update_default_template_to_light/migration.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/migrations/20260415082056_update_default_template_to_light/migration.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/migrations/20260415083830_update_default_template_to_light/migration.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/migrations/20260415085220_add_default_background_image/migration.sql" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/migrations/migration_lock.toml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -102,6 +52,7 @@
 }</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Creator_OS\upload" />
       <recent name="D:\Creator_OS\upload\app" />
       <recent name="D:\Creator_OS\upload\public\images" />
     </key>

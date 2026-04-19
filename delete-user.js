@@ -1,38 +1,41 @@
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
+// next.config.ts
+import type { NextConfig } from "next";
 
-async function deleteUser() {
-  //const email = 'maninder.birhe@gmail.com'; // Change this to the user's email
-  const email = 'maninder.birhe1@gmail.com'; // Change this to the user's email
-  //const email = 'maninder.birhe2@gmail.com'; // Change this to the user's email
-  //const email = 'dr.charuwagle@gmail.com'; // Change this to the user's email
+const nextConfig: NextConfig = {
+  serverExternalPackages: ['@prisma/client'],
 
-  try {
-    // First delete the user's portal and related data
-    const user = await prisma.user.findUnique({
-      where: { email: email },
-      include: { portal: true }
-    });
-    
-    if (user) {
-      // Delete links and products first
-      if (user.portal) {
-        await prisma.link.deleteMany({ where: { portalId: user.portal.id } });
-        await prisma.product.deleteMany({ where: { portalId: user.portal.id } });
-        await prisma.portal.delete({ where: { id: user.portal.id } });
-      }
-      
-      // Then delete the user
-      await prisma.user.delete({ where: { email: email } });
-      console.log(`✅ User ${email} deleted successfully`);
-    } else {
-      console.log(`❌ User ${email} not found`);
-    }
-  } catch (error) {
-    console.error('Error:', error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
+  // Ensure static files are served correctly
+  images: {
+    domains: ['localhost'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    formats: ['image/webp'],
+  },
 
-deleteUser();
+  // Allow serving static files from public directory
+  async headers() {
+    return [
+      {
+        source: '/images/:path*',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=3600' },
+        ],
+      },
+    ];
+  },
+
+  compress: true,
+  reactStrictMode: true,
+  swcMinify: true,
+
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'next-cloudinary'],
+  },
+};
+
+module.exports = {
+  allowedDevOrigins: ['192.168.1.32'],
+  ...nextConfig,
+};
+
+export default nextConfig;

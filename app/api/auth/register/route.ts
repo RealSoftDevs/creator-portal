@@ -14,15 +14,18 @@ export async function POST(request: Request) {
     console.log('📝 NEW USER REGISTRATION');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`User email: ${email}`);
-    console.log(`Using backgroundType: ${defaultConfig.backgroundType}`);
-    console.log(`Using backgroundImage: ${defaultConfig.backgroundImage}`);
-    console.log(`Using gradientStart: ${defaultConfig.gradientStart}`);
-    console.log(`Using gradientEnd: ${defaultConfig.gradientEnd}`);
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
+    // Check if user exists (including soft-deleted or regular)
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      include: { portal: true }
+    });
+
+    if (existingUser) {
       console.log(`❌ User already exists: ${email}`);
-      return NextResponse.json({ error: 'Email already exists' }, { status: 400 });
+      return NextResponse.json({
+        error: 'An account with this email already exists. Please login instead.'
+      }, { status: 400 });
     }
 
     const hashedPassword = await hashPassword(password);
@@ -35,6 +38,7 @@ export async function POST(request: Request) {
         email,
         name: name || email.split('@')[0],
         password: hashedPassword,
+        isPremium: false, // Explicitly set to false for new users
         portal: {
           create: {
             slug: slug,
@@ -46,7 +50,7 @@ export async function POST(request: Request) {
             gradientEnd: defaultConfig.gradientEnd,
             textColor: defaultConfig.textColor,
             fontFamily: defaultConfig.fontFamily,
-            // ALSO SET ADMIN FIELDS to the same defaults
+            // Set admin fields as well
             adminTemplateId: defaultConfig.templateId,
             adminPrimaryColor: defaultConfig.primaryColor,
             adminBackgroundType: defaultConfig.backgroundType,
@@ -55,7 +59,7 @@ export async function POST(request: Request) {
             adminGradientEnd: defaultConfig.gradientEnd,
             adminTextColor: defaultConfig.textColor,
             adminFontFamily: defaultConfig.fontFamily,
-            // ALSO SET PUBLIC FIELDS
+            // Set public fields as well
             publicTemplateId: defaultConfig.templateId,
             publicPrimaryColor: defaultConfig.primaryColor,
             publicBackgroundType: defaultConfig.backgroundType,
@@ -74,8 +78,6 @@ export async function POST(request: Request) {
     console.log(`✅ Portal created with ID: ${user.portal?.id}`);
     console.log(`   Background Type: ${user.portal?.backgroundType}`);
     console.log(`   Background Image: ${user.portal?.backgroundImage}`);
-    console.log(`   Admin Background Type: ${user.portal?.adminBackgroundType}`);
-    console.log(`   Admin Background Image: ${user.portal?.adminBackgroundImage}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     const token = await createToken(user.id);
@@ -97,6 +99,8 @@ export async function POST(request: Request) {
 
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json({ error: 'Something went wrong: ' + (error as Error).message }, { status: 500 });
+    return NextResponse.json({
+      error: 'Registration failed. Please try again.'
+    }, { status: 500 });
   }
 }
