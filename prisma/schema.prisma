@@ -91,15 +91,17 @@ model Click {
   device    String?
 }
 
+// prisma/schema.prisma - Add description field to Product model
 model Product {
-  id        String    @id @default(cuid())
-  title     String
-  imageUrl  String
-  buyLink   String
-  price     String?
-  platform  String    @default("custom")
-  order     Int       @default(0)
-  portalId  String
-  portal    Portal    @relation(fields: [portalId], references: [id])
-  createdAt DateTime  @default(now())
+  id          String    @id @default(cuid())
+  title       String
+  description String?   @default("")
+  imageUrl    String
+  buyLink     String
+  price       String?
+  platform    String    @default("custom")
+  order       Int       @default(0)
+  portalId    String
+  portal      Portal    @relation(fields: [portalId], references: [id])
+  createdAt   DateTime  @default(now())
 }

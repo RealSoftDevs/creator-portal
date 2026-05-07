@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 import { getTemplateById } from '@/lib/templates/index';
 import PlatformIcon from '@/app/components/PlatformIcon';
 
-// Define interfaces
 interface SocialLink {
   id: string;
   title: string;
@@ -18,6 +17,7 @@ interface SocialLink {
 interface Product {
   id: string;
   title: string;
+  description?: string;
   imageUrl: string;
   buyLink: string;
   price: string;
@@ -39,6 +39,8 @@ interface PortalData {
   gradientEnd?: string;
   textColor?: string;
   fontFamily?: string;
+  isPremium?: boolean;
+  customUsername?: string | null;
 }
 
 // Platform background colors
@@ -72,12 +74,20 @@ const getPlatformColor = (platform: string): string => {
   return colors[platform.toLowerCase()] || 'bg-gray-600';
 };
 
+// Truncate description helper
+const truncateText = (text: string, maxLength: number = 60) => {
+  if (!text) return '';
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+};
+
 export default function UserViewPage() {
   const params = useParams();
   const username = params?.username as string;
   const [portal, setPortal] = useState<PortalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!username) {
@@ -86,26 +96,15 @@ export default function UserViewPage() {
       return;
     }
 
-    // First try to find by username (premium custom URL)
     fetch(`/api/portal/public?username=${encodeURIComponent(username)}`)
       .then(res => res.json())
       .then(data => {
         if (data.error) {
-          // If not found, try by slug (free tier fallback)
-          fetch(`/api/portal/public?slug=${encodeURIComponent(username)}`)
-            .then(res2 => res2.json())
-            .then(data2 => {
-              if (data2.error) {
-                setError(true);
-              } else {
-                setPortal(data2);
-              }
-              setLoading(false);
-            });
+          setError(true);
         } else {
           setPortal(data);
-          setLoading(false);
         }
+        setLoading(false);
       })
       .catch(() => {
         setError(true);
@@ -113,18 +112,33 @@ export default function UserViewPage() {
       });
   }, [username]);
 
+  const toggleDescription = (productId: string) => {
+    setExpandedProducts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(productId)) {
+        newSet.delete(productId);
+      } else {
+        newSet.add(productId);
+      }
+      return newSet;
+    });
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !portal) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center text-center">
+        <div>
           <h1 className="text-2xl font-bold text-gray-800">Page Not Found</h1>
           <p className="text-gray-500 mt-2">This creator page doesn't exist</p>
         </div>
@@ -135,6 +149,7 @@ export default function UserViewPage() {
   const template = getTemplateById(portal.templateId || 'template1');
   const fontFamilyClass = portal.fontFamily || 'font-sans';
 
+  // Build background style
   const backgroundStyle: React.CSSProperties = {};
 
   let backgroundImageUrl = portal.backgroundImage;
@@ -147,20 +162,25 @@ export default function UserViewPage() {
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.backgroundAttachment = 'fixed';
+    backgroundStyle.minHeight = '100vh';
   } else if (portal.backgroundType === 'gradient' && portal.gradientStart && portal.gradientEnd) {
     backgroundStyle.background = `linear-gradient(135deg, ${portal.gradientStart}, ${portal.gradientEnd})`;
   } else {
     backgroundStyle.backgroundColor = portal.primaryColor || template.defaultBackground;
   }
 
-  const customTextColorStyle = { color: portal.textColor || template.defaultTextColor };
+  // Use display name - either title or username
+  const displayTitle = portal.title && portal.title !== 'My Creator Portal' ? portal.title : portal.userName;
+  const displayBio = portal.bio || '';
+  const displayTextColor = portal.textColor || template.defaultTextColor;
+  const customTextColorStyle = { color: displayTextColor };
   const socialAccounts = portal.links || [];
   const products = portal.products || [];
 
   return (
     <div className={`min-h-screen ${fontFamilyClass}`} style={backgroundStyle}>
-      {portal.backgroundImage && (
-        <div className="fixed inset-0 bg-black/40 pointer-events-none" />
+      {portal.backgroundType === 'image' && backgroundImageUrl && (
+        <div className="fixed inset-0 bg-black/30 pointer-events-none" />
       )}
 
       <div className="relative z-10 max-w-md mx-auto px-4 py-8">
@@ -169,50 +189,97 @@ export default function UserViewPage() {
           <div className="w-24 h-24 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-3xl mb-3 shadow-lg">
             {portal.userName?.charAt(0).toUpperCase() || '👤'}
           </div>
-          <h1 className="text-2xl font-bold">{portal.title || portal.userName}</h1>
-          {portal.bio && (
-            <p className="mt-2 text-sm opacity-80">{portal.bio}</p>
+          <h1 className="text-2xl font-bold">{displayTitle}</h1>
+          {displayBio && (
+            <p className="mt-2 text-sm opacity-80 whitespace-pre-wrap">{displayBio}</p>
           )}
         </div>
 
-        {/* Gallery Section */}
+        {/* Product Gallery */}
         {products.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2" style={customTextColorStyle}>
-              🖼️ Gallery
+              🛍️ Products
+              <span className="text-xs opacity-60">({products.length})</span>
             </h2>
             <div className="grid grid-cols-2 gap-3">
-              {products.map((product) => (
-                <a
-                  key={product.id}
-                  href={product.buyLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group"
-                >
-                  <img
-                    src={product.imageUrl}
-                    alt={product.title}
-                    className="w-full h-32 object-cover group-hover:scale-105 transition duration-300"
-                  />
-                  <div className="p-2">
-                    <div className="font-medium text-sm truncate text-gray-900">{product.title}</div>
-                    {product.price && <div className="text-xs text-green-600 font-semibold">{product.price}</div>}
-                    <div className="text-xs text-blue-500 mt-1">Shop now →</div>
+              {products.map((product) => {
+                const isExpanded = expandedProducts.has(product.id);
+                const shortDescription = truncateText(product.description || '', 60);
+                const hasLongDescription = (product.description?.length || 0) > 60;
+
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-md transition group flex flex-col"
+                  >
+                    <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className="block">
+                      <div className="relative w-full h-32 overflow-hidden bg-gray-100">
+                        <img
+                          src={product.imageUrl}
+                          alt={product.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          loading="lazy"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://placehold.co/400x400?text=No+Image';
+                          }}
+                        />
+                      </div>
+                      <div className="p-2">
+                        <h3 className="font-semibold text-sm truncate text-gray-900" title={product.title}>
+                          {product.title}
+                        </h3>
+                        {product.price && (
+                          <p className="text-sm text-green-600 font-bold mt-0.5">{product.price}</p>
+                        )}
+                      </div>
+                    </a>
+
+
+                        {/* Product Description - Show full but with line clamping for very long text */}
+                        {product.description && (
+                          <div className="px-2 pb-2">
+                            <p className="text-xs text-gray-600 leading-relaxed break-words line-clamp-4">
+                              {product.description}
+                            </p>
+                            {/* Add "Read more" for very long descriptions (more than 4 lines) */}
+                            {product.description.length > 200 && (
+                              <details className="mt-1">
+                                <summary className="text-xs text-blue-500 cursor-pointer hover:text-blue-600">
+                                  Read more
+                                </summary>
+                                <p className="text-xs text-gray-600 mt-1 leading-relaxed whitespace-pre-wrap">
+                                  {product.description}
+                                </p>
+                              </details>
+                            )}
+                          </div>
+                        )}
+                    <div className="px-2 pb-2 mt-auto">
+                      <a
+                        href={product.buyLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-medium py-1.5 rounded-lg transition"
+                      >
+                        Shop Now →
+                      </a>
+                    </div>
                   </div>
-                </a>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Links Section */}
+        {/* Social Links Section */}
         {socialAccounts.length > 0 && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2" style={customTextColorStyle}>
-              🔗 Links
+              🔗 Connect
+              <span className="text-xs opacity-60">({socialAccounts.length})</span>
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {socialAccounts.map((link) => {
                 const platform = link.title?.toLowerCase() || '';
                 const bgColor = getPlatformColor(platform);
@@ -223,14 +290,14 @@ export default function UserViewPage() {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`${bgColor} rounded-xl p-4 text-white flex items-center gap-3 hover:scale-[1.02] transition-transform shadow-sm group`}
+                    className={`${bgColor} rounded-xl p-3 text-white flex items-center gap-3 hover:scale-[1.02] transition-transform shadow-sm group`}
                   >
                     <PlatformIcon
                       platform={platform}
                       customIconUrl={link.iconUrl}
-                      className="w-6 h-6"
+                      className="w-5 h-5"
                     />
-                    <span className="flex-1 font-medium">{link.title}</span>
+                    <span className="flex-1 font-medium text-sm">{link.title}</span>
                     <span className="text-white/70 group-hover:translate-x-1 transition">→</span>
                   </a>
                 );
@@ -241,7 +308,7 @@ export default function UserViewPage() {
 
         {/* Footer */}
         <div className="text-center mt-12 text-xs opacity-60" style={customTextColorStyle}>
-          <p>Powered by cre8tive</p>
+          <p>Powered by CreatorPortal</p>
         </div>
       </div>
     </div>

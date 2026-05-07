@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       isPremium: portal.user.isPremium,
       customUsername: portal.user.name !== portal.slug ? portal.user.name : null
     });
-    
+
   } catch (error) {
     console.error('Public API error:', error);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

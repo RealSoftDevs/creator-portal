@@ -1,20 +1,106 @@
-// app/studio/page.tsx (Complete updated version)
-
+// app/studio/page.tsx
 'use client';
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { LogOut, Palette, Crown, ArrowLeft, Plus, Trash2, Eye, Check, X, Edit2, Loader2, Layers } from 'lucide-react';
+import {
+  LogOut, Palette, Crown, ArrowLeft, Plus, Trash2, Eye, Check, X, Edit2, Loader2, Layers, ExternalLink
+} from 'lucide-react';
 import { getTemplateById } from '@/lib/templates/index';
 import { useStudioData } from './hooks/useStudioData';
 import { useBackButton } from '@/app/hooks/useBackButton';
 import { useAuth } from '@/app/hooks/useAuth';
-import CloudinaryImage from '@/app/components/CloudinaryImage';
+import ProductImage from './components/ProductImage';
 
 // Lazy load heavy components
 const TemplateSelectorModal = lazy(() => import('../components/TemplateSelectorModal'));
 const AddLinkModal = lazy(() => import('./components/AddLinkModal'));
 const AddProductModal = lazy(() => import('./components/AddProductModal'));
+
+// Memoized stat card component for performance
+const StatCard = ({ value, label, limit, isPremium, textColorStyle }: any) => (
+  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
+    <div className="text-2xl font-bold" style={textColorStyle}>{value}</div>
+    <div className="text-xs opacity-70" style={textColorStyle}>
+      {label} {limit && `(${value}/${limit})`}
+    </div>
+    {!isPremium && value >= (limit || 0) && (
+      <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>
+    )}
+  </div>
+);
+
+// Memoized link item component
+const LinkItem = ({ link, textColorStyle, onDelete }: any) => (
+  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center gap-3 group">
+    {link.imageUrl && link.imageUrl !== '' && (
+      <ProductImage src={link.imageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+    )}
+    <div className="flex-1 min-w-0">
+      <h3 className="font-medium truncate" style={textColorStyle}>{link.title}</h3>
+      <p className="text-xs opacity-60 truncate" style={textColorStyle}>{link.url}</p>
+      {link.clicks > 0 && <p className="text-xs text-green-600 mt-1">{link.clicks} clicks</p>}
+    </div>
+    <button onClick={() => onDelete(link.id)} className="p-2 rounded-full hover:bg-red-500/20 transition opacity-0 group-hover:opacity-100">
+      <Trash2 className="w-4 h-4 text-red-500" />
+    </button>
+  </div>
+);
+
+// Memoized product item component
+const ProductItem = ({ product, textColorStyle, onDelete }: any) => {
+  const hasValidImage = product.imageUrl &&
+                        product.imageUrl !== '' &&
+                        product.imageUrl !== 'null' &&
+                        product.imageUrl !== 'undefined';
+
+  return (
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden shadow-sm group">
+      <div className="relative w-full h-32">
+        {hasValidImage ? (
+          <ProductImage src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+            <div className="text-center">
+              <div className="text-3xl">🛍️</div>
+              <p className="text-xs text-gray-400">No image</p>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="p-2">
+        <h3 className="font-medium text-sm truncate" style={textColorStyle} title={product.title}>
+          {product.title}
+        </h3>
+        {product.price && <p className="text-xs text-green-600">{product.price}</p>}
+        {product.description && (
+          <p className="text-xs text-gray-500 line-clamp-2 mt-1" title={product.description}>
+            {product.description}
+          </p>
+        )}
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => { if (confirm(`Delete "${product.title}"?`)) onDelete(product.id); }}
+            className="text-xs text-red-500 hover:text-red-700 transition"
+          >
+            Delete
+          </button>
+          {product.buyLink && (
+            <a
+              href={product.buyLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-500 hover:text-blue-700 transition flex items-center gap-1"
+            >
+              View Product <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+        {product.isDummy && <p className="text-xs text-gray-400 mt-1">Sample product</p>}
+      </div>
+    </div>
+  );
+};
 
 export default function StudioDashboard() {
   const router = useRouter();
@@ -29,36 +115,30 @@ export default function StudioDashboard() {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
 
-  // NEW: Separate state for Public and Admin
-  const [publicSettings, setPublicSettings] = useState({
-    templateId: 'template1',
-    primaryColor: '#f5f5f5',
-    textColor: '',
-    fontFamily: 'font-sans',
-    backgroundType: 'image',
-    gradientStart: '',
-    gradientEnd: '',
-    backgroundImage: '/images/default-bg.jpg'
-  });
-
   const [adminSettings, setAdminSettings] = useState({
     templateId: 'template1',
     primaryColor: '#f5f5f5',
-    textColor: '',
+    textColor: '#1a1a1a',
     fontFamily: 'font-sans',
     backgroundType: 'image',
-    gradientStart: '',
-    gradientEnd: '',
+    gradientStart: '#fb923c',
+    gradientEnd: '#fde047',
     backgroundImage: '/images/default-bg.jpg'
   });
 
-  // NEW: Flag to use separate admin styling
   const [useSeparateAdminStyle, setUseSeparateAdminStyle] = useState(false);
 
   const { links, products, loading, portalSlug, addLink, addProduct, deleteLink, deleteProduct, fetchLinks, fetchProducts } = useStudioData();
 
-  const handleGoToDashboard = () => router.push('/dashboard');
+  const handleGoToDashboard = useCallback(() => router.push('/dashboard'), [router]);
   useBackButton(handleGoToDashboard, true);
+
+  // Calculate stats with useMemo for performance
+  const stats = useMemo(() => {
+    const realProductsCount = products.filter((p: any) => !p.isDummy).length;
+    const totalClicks = links.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
+    return { realProductsCount, totalClicks };
+  }, [products, links]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -77,7 +157,7 @@ export default function StudioDashboard() {
     }
   }, [isAuthenticated]);
 
-  const checkPremiumStatus = async () => {
+  const checkPremiumStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/user/status');
       const data = await res.json();
@@ -85,73 +165,44 @@ export default function StudioDashboard() {
     } catch (error) {
       console.error('Failed to check premium status:', error);
     }
-  };
+  }, []);
 
-  const fetchUserInfo = async () => {
+  const fetchUserInfo = useCallback(async () => {
     try {
       const res = await fetch('/api/portal/info');
       const data = await res.json();
-      if (data.userName) {
-        setUserName(data.userName);
-        setCustomUsername(data.userName);
-      } else if (data.slug) {
-        setUserName(data.slug);
-        setCustomUsername(data.slug);
-      }
+      if (data.userName) setUserName(data.userName);
+      else if (data.slug) setUserName(data.slug);
+      setCustomUsername(data.userName || data.slug);
     } catch (error) {
       console.error('Failed to fetch user info:', error);
     }
-  };
+  }, []);
 
- // app/studio/page.tsx - Update the loadCurrentSettings function
+  const loadCurrentSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/portal/info');
+      const data = await res.json();
 
- // In app/studio/page.tsx - ensure loadCurrentSettings is correct
- const loadCurrentSettings = async () => {
-   try {
-     const res = await fetch('/api/portal/info');
-     const data = await res.json();
+      const hasSeparateAdmin = data.adminTemplateId !== null && data.adminTemplateId !== undefined;
+      setUseSeparateAdminStyle(hasSeparateAdmin);
 
-     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-     console.log('🎨 STUDIO - Loading Settings');
-     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-     console.log('MAIN backgroundType:', data.backgroundType);
-     console.log('MAIN backgroundImage:', data.backgroundImage);
-     console.log('ADMIN backgroundType:', data.adminBackgroundType);
-     console.log('ADMIN backgroundImage:', data.adminBackgroundImage);
-     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      setAdminSettings({
+        templateId: data.adminTemplateId || data.templateId || 'template1',
+        primaryColor: data.adminPrimaryColor || data.primaryColor || '#f5f5f5',
+        textColor: data.adminTextColor || data.textColor || '#1a1a1a',
+        fontFamily: data.adminFontFamily || data.fontFamily || 'font-sans',
+        backgroundType: data.adminBackgroundType || data.backgroundType || 'image',
+        gradientStart: data.adminGradientStart || data.gradientStart || '#fb923c',
+        gradientEnd: data.adminGradientEnd || data.gradientEnd || '#fde047',
+        backgroundImage: data.adminBackgroundImage || data.backgroundImage || '/images/default-bg.jpg'
+      });
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  }, []);
 
-     // Load Public settings (MAIN fields)
-     setPublicSettings({
-       templateId: data.templateId || 'template1',
-       primaryColor: data.primaryColor || '#f5f5f5',
-       textColor: data.textColor || '#1a1a1a',
-       fontFamily: data.fontFamily || 'font-sans',
-       backgroundType: data.backgroundType || 'image',
-       gradientStart: data.gradientStart || '#fb923c',
-       gradientEnd: data.gradientEnd || '#fde047',
-       backgroundImage: data.backgroundImage || '/images/default-bg.jpg'
-     });
-
-     // Load Admin settings - USE ADMIN FIELDS FIRST
-     const hasSeparateAdmin = data.adminTemplateId !== null && data.adminTemplateId !== undefined;
-     setUseSeparateAdminStyle(hasSeparateAdmin);
-
-     setAdminSettings({
-       templateId: data.adminTemplateId || data.templateId || 'template1',
-       primaryColor: data.adminPrimaryColor || data.primaryColor || '#f5f5f5',
-       textColor: data.adminTextColor || data.textColor || '#1a1a1a',
-       fontFamily: data.adminFontFamily || data.fontFamily || 'font-sans',
-       backgroundType: data.adminBackgroundType || data.backgroundType || 'image',
-       gradientStart: data.adminGradientStart || data.gradientStart || '#fb923c',
-       gradientEnd: data.adminGradientEnd || data.gradientEnd || '#fde047',
-       backgroundImage: data.adminBackgroundImage || data.backgroundImage || '/images/default-bg.jpg'
-     });
-
-   } catch (error) {
-     console.error('Failed to load settings:', error);
-   }
- };
-  const updateUsername = async () => {
+  const updateUsername = useCallback(async () => {
     if (!isPremium) {
       alert('✨ Custom URL is a premium feature. Please upgrade to use it!');
       setIsEditingUsername(false);
@@ -189,10 +240,9 @@ export default function StudioDashboard() {
       console.error('Failed to update username:', error);
       alert('Failed to update username');
     }
-  };
+  }, [isPremium, customUsername]);
 
-  // FIXED: Update only the target (public OR admin, not both)
-  const updateTemplate = async (config: any) => {
+  const updateTemplate = useCallback(async (config: any) => {
     try {
       const response = await fetch('/api/portal/update-template', {
         method: 'POST',
@@ -201,135 +251,94 @@ export default function StudioDashboard() {
       });
       const data = await response.json();
 
-      if (data.success) {
-        if (config.target === 'public') {
-          // Update ONLY public settings
-          setPublicSettings({
-            templateId: config.templateId,
-            primaryColor: config.primaryColor,
-            textColor: config.textColor || '',
-            fontFamily: config.fontFamily || 'font-sans',
-            backgroundType: config.backgroundType,
-            gradientStart: config.gradientStart || '',
-            gradientEnd: config.gradientEnd || '',
-            backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
-          });
-
-          // If not using separate admin style, also update admin to match
-          if (!useSeparateAdminStyle) {
-            setAdminSettings({
-              templateId: config.templateId,
-              primaryColor: config.primaryColor,
-              textColor: config.textColor || '',
-              fontFamily: config.fontFamily || 'font-sans',
-              backgroundType: config.backgroundType,
-              gradientStart: config.gradientStart || '',
-              gradientEnd: config.gradientEnd || '',
-              backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
-            });
-          }
-          console.log('✅ Updated PUBLIC settings only');
-
-        } else if (config.target === 'admin') {
-          // Update ONLY admin settings
-          setAdminSettings({
-            templateId: config.templateId,
-            primaryColor: config.primaryColor,
-            textColor: config.textColor || '',
-            fontFamily: config.fontFamily || 'font-sans',
-            backgroundType: config.backgroundType,
-            gradientStart: config.gradientStart || '',
-            gradientEnd: config.gradientEnd || '',
-            backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
-          });
-          setUseSeparateAdminStyle(true);
-          console.log('✅ Updated ADMIN settings only');
-        }
-        return true;
+      if (data.success && config.target === 'admin') {
+        setAdminSettings(prev => ({
+          ...prev,
+          templateId: config.templateId,
+          primaryColor: config.primaryColor,
+          textColor: config.textColor || '',
+          fontFamily: config.fontFamily || 'font-sans',
+          backgroundType: config.backgroundType,
+          gradientStart: config.gradientStart || '',
+          gradientEnd: config.gradientEnd || '',
+          backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
+        }));
+        setUseSeparateAdminStyle(true);
       }
-      return false;
+      return data.success;
     } catch (error) {
       console.error('Error updating template:', error);
       return false;
     }
-  };
+  }, []);
 
-  const handleUpgradeClick = () => setShowPaymentModal(true);
-  const handleLogout = async () => {
+  const handleUpgradeClick = useCallback(() => setShowPaymentModal(true), []);
+  const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
-  };
+  }, [router]);
 
-  const realProductsCount = products.filter((p: any) => !p.isDummy).length;
-  const canAddLink = () => !(!isPremium && links.length >= 1);
-  const canAddProduct = () => !(!isPremium && realProductsCount >= 4);
+  const canAddLink = useCallback(() => !(!isPremium && links.length >= 1), [isPremium, links.length]);
+  const canAddProduct = useCallback(() => !(!isPremium && stats.realProductsCount >= 4), [isPremium, stats.realProductsCount]);
 
-  const handleAddLink = async (linkData: any) => {
+  const handleAddLink = useCallback(async (linkData: any) => {
     if (!canAddLink()) {
       alert('✨ Free users can only add 1 link. Upgrade to Premium for more links!');
       return;
     }
     await addLink(linkData);
-  };
+  }, [canAddLink, addLink]);
 
-  const handleAddProduct = async (product: any) => {
+  const handleAddProduct = useCallback(async (product: any) => {
     if (!canAddProduct()) {
       alert('✨ Free users can only add 4 products. Upgrade to Premium for more!');
       return;
     }
     await addProduct(product);
-  };
+  }, [canAddProduct, addProduct]);
 
-  const totalClicks = links.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
+  const getPublicUrl = useCallback(() => {
+    if (typeof window === 'undefined') return '';
+    const baseUrl = window.location.origin;
+
+    // If premium user has a custom username (different from slug), show custom URL
+    if (isPremium && userName && userName !== portalSlug) {
+      return `${baseUrl}/view/${userName}`;
+    }
+
+    // Otherwise show slug URL
+    return `${baseUrl}/view?slug=${portalSlug}`;
+  }, [isPremium, userName, portalSlug]);
+
   const template = getTemplateById(adminSettings.templateId);
 
-  // Build background style for ADMIN page (studio display)
-  const backgroundStyle: React.CSSProperties = {};
+  // Build background style with useMemo
+  const backgroundStyle = useMemo(() => {
+    const style: React.CSSProperties = {};
+    let bgImageUrl = adminSettings.backgroundImage;
 
-  let bgImageUrl = adminSettings.backgroundImage;
-  if (bgImageUrl && !bgImageUrl.startsWith('http') && !bgImageUrl.startsWith('/')) {
-    bgImageUrl = `/${bgImageUrl}`;
-  }
+    if (bgImageUrl && !bgImageUrl.startsWith('http') && !bgImageUrl.startsWith('/')) {
+      bgImageUrl = `/${bgImageUrl}`;
+    }
 
-  if (adminSettings.backgroundType === 'image' && bgImageUrl) {
-    backgroundStyle.backgroundImage = `url(${bgImageUrl})`;
-    backgroundStyle.backgroundSize = 'cover';
-    backgroundStyle.backgroundPosition = 'center';
-    backgroundStyle.backgroundAttachment = 'fixed';
-    backgroundStyle.minHeight = '100vh';
-  } else if (adminSettings.backgroundType === 'gradient' && adminSettings.gradientStart && adminSettings.gradientEnd) {
-    backgroundStyle.background = `linear-gradient(135deg, ${adminSettings.gradientStart}, ${adminSettings.gradientEnd})`;
-  } else {
-    backgroundStyle.backgroundColor = adminSettings.primaryColor || template.defaultBackground;
-  }
+    if (adminSettings.backgroundType === 'image' && bgImageUrl) {
+      style.backgroundImage = `url(${bgImageUrl})`;
+      style.backgroundSize = 'cover';
+      style.backgroundPosition = 'center';
+      style.backgroundAttachment = 'fixed';
+      style.minHeight = '100vh';
+    } else if (adminSettings.backgroundType === 'gradient' && adminSettings.gradientStart && adminSettings.gradientEnd) {
+      style.background = `linear-gradient(135deg, ${adminSettings.gradientStart}, ${adminSettings.gradientEnd})`;
+    } else {
+      style.backgroundColor = adminSettings.primaryColor || template.defaultBackground;
+    }
+    return style;
+  }, [adminSettings.backgroundType, adminSettings.backgroundImage, adminSettings.gradientStart,
+      adminSettings.gradientEnd, adminSettings.primaryColor, template.defaultBackground]);
 
-  const textColorStyle = { color: adminSettings.textColor || template.defaultTextColor };
+  const textColorStyle = useMemo(() => ({ color: adminSettings.textColor || template.defaultTextColor }),
+    [adminSettings.textColor, template.defaultTextColor]);
   const fontClass = adminSettings.fontFamily || 'font-sans';
-
-
-const getPublicUrl = () => {
-  if (typeof window === 'undefined') return '';
-  const baseUrl = window.location.origin;
-
-  // Premium users with custom username - ONLY show custom URL
-  if (isPremium && userName && userName !== portalSlug) {
-    return `${baseUrl}/view/${userName}`;
-  }
-
-  // Free users or premium without custom name - show slug URL
-  return `${baseUrl}/view?slug=${portalSlug}`;
-};
-
-// For the preview button - use the same logic
-const getPreviewUrl = () => {
-  if (typeof window === 'undefined') return '';
-  const baseUrl = window.location.origin;
-
-  if (isPremium && userName && userName !== portalSlug) {
-    return `${baseUrl}/view/${userName}`;
-  }
-  return `${baseUrl}/view?slug=${portalSlug}`;
-};
 
   // Loading state
   if (authLoading || isLoadingSettings) {
@@ -344,9 +353,6 @@ const getPreviewUrl = () => {
   }
 
   if (!isAuthenticated) return null;
-
-  // Determine which settings to show in template selector
-  const templateSelectorSettings = useSeparateAdminStyle ? adminSettings : publicSettings;
 
   return (
     <div className={`min-h-screen ${fontClass}`} style={backgroundStyle}>
@@ -376,6 +382,35 @@ const getPreviewUrl = () => {
         </div>
 
         <div className="max-w-md mx-auto px-4 py-6">
+          {/* Style Mode Toggle */}
+          {isPremium && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 mb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4" style={textColorStyle} />
+                  <span className="text-sm" style={textColorStyle}>Style Mode</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setUseSeparateAdminStyle(false)}
+                    className={`px-3 py-1 rounded-lg text-xs transition ${
+                      !useSeparateAdminStyle ? 'bg-black text-white' : 'bg-white/20 text-white/70 hover:bg-white/30'
+                    }`}
+                  >
+                    Same for both
+                  </button>
+                  <button
+                    onClick={() => setUseSeparateAdminStyle(true)}
+                    className={`px-3 py-1 rounded-lg text-xs transition ${
+                      useSeparateAdminStyle ? 'bg-black text-white' : 'bg-white/20 text-white/70 hover:bg-white/30'
+                    }`}
+                  >
+                    Different styles
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Public Page Card */}
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white mb-6">
@@ -385,8 +420,22 @@ const getPreviewUrl = () => {
                 <Eye className="w-4 h-4" /> Preview
               </button>
             </div>
-            <p className="font-mono text-xs break-all">{getPublicUrl()}</p>
 
+            {/* Show custom URL if premium user has one */}
+            {isPremium && userName && userName !== portalSlug ? (
+              <>
+                <p className="font-mono text-xs break-all">
+                  {typeof window !== 'undefined' && window.location.origin}/view/{userName}
+                </p>
+                <p className="text-[10px] opacity-60 mt-1">
+                  ℹ️ Old URL still works: {typeof window !== 'undefined' && window.location.origin}/view?slug={portalSlug}
+                </p>
+              </>
+            ) : (
+              <p className="font-mono text-xs break-all">{getPublicUrl()}</p>
+            )}
+
+            {/* Custom URL editor for premium users */}
             {isPremium ? (
               <div className="mt-3 pt-2 border-t border-white/20">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -405,7 +454,7 @@ const getPreviewUrl = () => {
                       <button onClick={updateUsername} className="text-green-300 text-xs p-0.5 hover:bg-white/10 rounded">
                         <Check className="w-3 h-3" />
                       </button>
-                      <button onClick={() => { setIsEditingUsername(false); setCustomUsername(userName); }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
+                      <button onClick={() => { setIsEditingUsername(false); setCustomUsername(userName || portalSlug || ''); }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
                         <X className="w-3 h-3" />
                       </button>
                     </>
@@ -430,18 +479,9 @@ const getPreviewUrl = () => {
 
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-3 mb-6">
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
-              <div className="text-2xl font-bold" style={textColorStyle}>{links.length}</div>
-              <div className="text-xs opacity-70" style={textColorStyle}>Links {!isPremium ? `(1/1)` : `(${links.length}/10)`}</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
-              <div className="text-2xl font-bold" style={textColorStyle}>{realProductsCount}</div>
-              <div className="text-xs opacity-70" style={textColorStyle}>Products {!isPremium ? `(${realProductsCount}/4)` : `(${realProductsCount}/50)`}</div>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
-              <div className="text-2xl font-bold" style={textColorStyle}>{totalClicks}</div>
-              <div className="text-xs opacity-70" style={textColorStyle}>Clicks</div>
-            </div>
+            <StatCard value={links.length} label="Links" limit={isPremium ? 10 : 1} isPremium={isPremium} textColorStyle={textColorStyle} />
+            <StatCard value={stats.realProductsCount} label="Products" limit={isPremium ? 50 : 4} isPremium={isPremium} textColorStyle={textColorStyle} />
+            <StatCard value={stats.totalClicks} label="Clicks" limit={null} isPremium={true} textColorStyle={textColorStyle} />
           </div>
 
           {/* Links Section */}
@@ -474,25 +514,7 @@ const getPreviewUrl = () => {
             ) : (
               <div className="space-y-2">
                 {links.map((link: any) => (
-                  <div key={link.id} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center gap-3">
-                    {link.imageUrl && (
-                      <CloudinaryImage
-                        src={link.imageUrl}
-                        alt=""
-                        width={32}
-                        height={32}
-                        className="w-8 h-8 rounded-full object-cover"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate" style={textColorStyle}>{link.title}</h3>
-                      <p className="text-xs opacity-60 truncate" style={textColorStyle}>{link.url}</p>
-                      {link.clicks > 0 && <p className="text-xs text-green-600 mt-1">{link.clicks} clicks</p>}
-                    </div>
-                    <button onClick={() => deleteLink(link.id)} className="p-2 rounded-full hover:bg-red-500/20 transition">
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                    </button>
-                  </div>
+                  <LinkItem key={link.id} link={link} textColorStyle={textColorStyle} onDelete={deleteLink} />
                 ))}
               </div>
             )}
@@ -503,7 +525,7 @@ const getPreviewUrl = () => {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>
                 🖼️ Gallery
-                <span className="text-xs opacity-60">({realProductsCount}/50)</span>
+                <span className="text-xs opacity-60">({stats.realProductsCount}/50)</span>
               </h2>
               <button
                 onClick={() => setShowAddProductModal(true)}
@@ -526,26 +548,7 @@ const getPreviewUrl = () => {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {products.map((product: any) => (
-                  <div key={product.id} className="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden shadow-sm">
-                    <CloudinaryImage
-                      src={product.imageUrl}
-                      alt={product.title}
-                      width={400}
-                      height={400}
-                      className="w-full h-32 object-cover"
-                    />
-                    <div className="p-2">
-                      <h3 className="font-medium text-sm truncate" style={textColorStyle}>{product.title}</h3>
-                      {product.price && <p className="text-xs text-green-600">{product.price}</p>}
-                      <button
-                        onClick={() => { if (confirm(`Delete "${product.title}"?`)) deleteProduct(product.id); }}
-                        className="text-xs text-red-500 mt-1 hover:text-red-700 transition"
-                      >
-                        Delete
-                      </button>
-                      {product.isDummy && <p className="text-xs text-gray-400 mt-1">Sample product</p>}
-                    </div>
-                  </div>
+                  <ProductItem key={product.id} product={product} textColorStyle={textColorStyle} onDelete={deleteProduct} />
                 ))}
               </div>
             )}
@@ -560,14 +563,14 @@ const getPreviewUrl = () => {
         {showTemplateSelector && (
           <TemplateSelectorModal
             isPremium={isPremium}
-            selectedTemplate={templateSelectorSettings.templateId}
-            primaryColor={templateSelectorSettings.primaryColor}
-            textColor={templateSelectorSettings.textColor}
-            fontFamily={templateSelectorSettings.fontFamily}
-            backgroundType={templateSelectorSettings.backgroundType}
-            gradientStart={templateSelectorSettings.gradientStart}
-            gradientEnd={templateSelectorSettings.gradientEnd}
-            backgroundImage={templateSelectorSettings.backgroundImage}
+            selectedTemplate={adminSettings.templateId}
+            primaryColor={adminSettings.primaryColor}
+            textColor={adminSettings.textColor}
+            fontFamily={adminSettings.fontFamily}
+            backgroundType={adminSettings.backgroundType}
+            gradientStart={adminSettings.gradientStart}
+            gradientEnd={adminSettings.gradientEnd}
+            backgroundImage={adminSettings.backgroundImage}
             userName={userName}
             onClose={() => setShowTemplateSelector(false)}
             onSelectTemplate={updateTemplate}
@@ -580,6 +583,7 @@ const getPreviewUrl = () => {
         )}
       </Suspense>
 
+      {/* Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center">
           <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto p-6 text-center">
