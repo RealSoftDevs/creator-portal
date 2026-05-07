@@ -19,7 +19,7 @@ interface AddProductModalProps {
   onSave: (product: any) => void;
 }
 
-type ImageSourceType = 'upload' | 'url' | 'fetch' | 'proxy';
+type ImageSourceType = 'upload' | 'url' | 'auto';
 
 export default function AddProductModal({ onClose, onSave }: AddProductModalProps) {
   const [title, setTitle] = useState('');
@@ -30,32 +30,149 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
   const [platform, setPlatform] = useState('custom');
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [fetchingPreview, setFetchingPreview] = useState(false);
-  const [previewData, setPreviewData] = useState<ProductPreview | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchStatus, setFetchStatus] = useState<{ image: string; details: string }>({ image: 'pending', details: 'pending' });
   const [editMode, setEditMode] = useState(false);
-  const [fetchError, setFetchError] = useState('');
-  const [imageSource, setImageSource] = useState<ImageSourceType>('upload');
+  const [imageSource, setImageSource] = useState<ImageSourceType>('auto');
   const [manualImageUrl, setManualImageUrl] = useState('');
-  const [isImageLoading, setIsImageLoading] = useState(false);
-  const [imageLoadError, setImageLoadError] = useState('');
-  const [proxyAttempts, setProxyAttempts] = useState<string[]>([]);
+  const [showManualImageInput, setShowManualImageInput] = useState(false);
 
-  const [originalFetchedData, setOriginalFetchedData] = useState<ProductPreview | null>(null);
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
-  // Proxy services to try (free CORS proxies)
+  // Proxy services
   const proxyServices = [
     { name: 'All Origins', url: 'https://api.allorigins.win/raw?url=' },
     { name: 'CORS Proxy', url: 'https://cors-anywhere.herokuapp.com/' },
-    { name: 'Proxy.sh', url: 'https://proxy.sh/api/fetch?url=' },
   ];
 
-  // Debounced URL fetching for product info (title, description, price only)
+  // Main fetch function - tries everything automatically
+  const fetchEverything = useCallback(async (url: string) => {
+    setIsFetching(true);
+    setFetchStatus({ image: 'fetching', details: 'fetching' });
+
+    let result = { title: '', description: '', price: '', imageUrl: '' };
+
+    // Try multiple methods in parallel
+    const fetchPromises = [
+      fetchViaApi(url),
+      fetchViaProxy(url),
+    ];
+
+    const results = await Promise.allSettled(fetchPromises);
+
+    // Combine results from all methods
+    for (const res of results) {
+      if (res.status === 'fulfilled' && res.value) {
+        result = {
+          title: result.title || res.value.title,
+          description: result.description || res.value.description,
+          price: result.price || res.value.price,
+          imageUrl: result.imageUrl || res.value.imageUrl,
+        };
+      }
+    }
+
+    // Update state with fetched data
+    if (result.title && !title) setTitle(result.title);
+    if (result.description && !description) setDescription(result.description);
+    if (result.price && !price) setPrice(result.price);
+    if (result.imageUrl && !imageUrl) {
+      setImageUrl(result.imageUrl);
+      setFetchStatus(prev => ({ ...prev, image: 'success' }));
+    } else if (!result.imageUrl) {
+      setFetchStatus(prev => ({ ...prev, image: 'failed' }));
+    }
+
+    setFetchStatus(prev => ({ ...prev, details: result.title ? 'success' : 'failed' }));
+    setIsFetching(false);
+  }, [title, description, price, imageUrl]);
+
+  // Method 1: Fetch via your API
+  const fetchViaApi = async (url: string): Promise<Partial<ProductPreview>> => {
+    try {
+      const res = await fetch(`/api/product-preview?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      return {
+        title: data.title || '',
+        description: data.description || '',
+        price: data.price || '',
+        imageUrl: data.imageUrl || '',
+      };
+    } catch (error) {
+      console.error('API fetch error:', error);
+      return {};
+    }
+  };
+
+  // Method 2: Fetch via proxy (for images and data)
+  const fetchViaProxy = async (url: string): Promise<Partial<ProductPreview>> => {
+    for (const proxy of proxyServices) {
+      try {
+        const proxyUrl = `${proxy.url}${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+
+        if (response.ok) {
+          const html = await response.text();
+
+          // Extract title
+          let title = '';
+          const titleMatch = html.match(/<title>([^<]*)<\/title>/);
+          if (titleMatch) {
+            title = titleMatch[1]
+              .replace(/ : Amazon\.in.*$/, '')
+              .replace(/ \| Amazon\.in.*$/, '')
+              .replace(/ - Amazon\.in.*$/, '')
+              .trim();
+            if (title.length > 120) title = title.substring(0, 117) + '...';
+          }
+
+          // Extract description
+          let description = '';
+          const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+          if (descMatch) {
+            description = descMatch[1];
+            if (description.length > 500) description = description.substring(0, 497) + '...';
+          }
+
+          // Extract image URL
+          let imageUrl = '';
+          const imagePatterns = [
+            /"hiRes":"([^"]+)"/,
+            /"large":"([^"]+)"/,
+            /<meta property="og:image" content="([^"]+)"/,
+            /<img[^>]*id="landingImage"[^>]*src="([^"]+)"/,
+          ];
+
+          for (const pattern of imagePatterns) {
+            const match = html.match(pattern);
+            if (match && match[1]) {
+              imageUrl = match[1].replace(/\\/g, '');
+              if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
+              break;
+            }
+          }
+
+          // Extract price
+          let price = '';
+          const priceMatch = html.match(/<span class="a-price-whole">([^<]+)<\/span>/);
+          if (priceMatch) {
+            price = `₹${priceMatch[1].replace(/[^0-9]/g, '')}`;
+          }
+
+          if (title || description || imageUrl || price) {
+            return { title, description, imageUrl, price };
+          }
+        }
+      } catch (error) {
+        console.error(`Proxy ${proxy.name} failed:`, error);
+      }
+    }
+    return {};
+  };
+
+  // Auto-fetch when link is pasted (debounced)
   useEffect(() => {
     if (!buyLink || !buyLink.startsWith('http')) {
-      setShowPreview(false);
-      setPreviewData(null);
       return;
     }
 
@@ -64,7 +181,7 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     }
 
     debounceTimer.current = setTimeout(() => {
-      fetchProductPreview();
+      fetchEverything(buyLink);
     }, 800);
 
     return () => {
@@ -72,48 +189,15 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
         clearTimeout(debounceTimer.current);
       }
     };
-  }, [buyLink]);
+  }, [buyLink, fetchEverything]);
 
-  const fetchProductPreview = async () => {
-    if (!buyLink || !buyLink.startsWith('http')) return;
-
-    setFetchingPreview(true);
-    setFetchError('');
-
-    try {
-      const res = await fetch(`/api/product-preview?url=${encodeURIComponent(buyLink)}`);
-      const data = await res.json();
-
-      if (data.error) {
-        setFetchError(data.error);
-      } else {
-        setOriginalFetchedData(data);
-        setPreviewData(data);
-        setPlatform(data.platform || 'custom');
-
-        if (!editMode) {
-          if (data.title && !title) setTitle(data.title);
-          if (data.price && !price) setPrice(data.price);
-          if (data.description && !description) setDescription(data.description);
-        }
-        setShowPreview(true);
-      }
-    } catch (error) {
-      console.error('Preview fetch error:', error);
-      setFetchError('Could not fetch product info. You can manually enter details below.');
-    } finally {
-      setFetchingPreview(false);
-    }
-  };
-
-  // Handle file upload from device
+  // Handle file upload
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
 
     setLoading(true);
     setUploadProgress(0);
-    setImageLoadError('');
 
     const formData = new FormData();
     formData.append('file', file);
@@ -137,6 +221,7 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
         setImageUrl(finalImageUrl);
         setUploadProgress(100);
         setImageSource('upload');
+        setShowManualImageInput(false);
       } else {
         alert(data.error || 'Upload failed');
         setUploadProgress(0);
@@ -159,102 +244,12 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     maxSize: 5 * 1024 * 1024,
   });
 
-  // Handle manual image URL
   const handleManualImageUrl = () => {
     if (!manualImageUrl) return;
-
-    setIsImageLoading(true);
-    setImageLoadError('');
-
-    const img = new Image();
-    img.onload = () => {
-      setImageUrl(manualImageUrl);
-      setImageSource('url');
-      setIsImageLoading(false);
-      setManualImageUrl('');
-    };
-    img.onerror = () => {
-      setImageLoadError('Invalid image URL. Please check the link or try uploading a file.');
-      setIsImageLoading(false);
-    };
-    img.src = manualImageUrl;
-  };
-
-  // Fetch image through proxy services
-  const fetchImageViaProxy = async (imageUrl: string, proxyIndex: number = 0): Promise<string | null> => {
-    if (proxyIndex >= proxyServices.length) return null;
-
-    const proxy = proxyServices[proxyIndex];
-    setProxyAttempts(prev => [...prev, `${proxy.name}...`]);
-
-    try {
-      const proxyUrl = `${proxy.url}${encodeURIComponent(imageUrl)}`;
-      const response = await fetch(proxyUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      });
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
-        return objectUrl;
-      }
-    } catch (error) {
-      console.error(`Proxy ${proxy.name} failed:`, error);
-    }
-
-    // Try next proxy
-    return fetchImageViaProxy(imageUrl, proxyIndex + 1);
-  };
-
-  // Fetch image from product link with multiple methods
-  const fetchImageFromLink = async () => {
-    if (!buyLink) {
-      alert('Please enter a product link first');
-      return;
-    }
-
-    setIsImageLoading(true);
-    setImageLoadError('');
-    setProxyAttempts([]);
-
-    try {
-      // Method 1: Try to get image from product page API
-      const res = await fetch(`/api/product-preview?url=${encodeURIComponent(buyLink)}`);
-      const data = await res.json();
-
-      if (data.imageUrl && data.imageUrl !== '') {
-        // Test if image loads directly
-        const testImg = new Image();
-        testImg.onload = () => {
-          setImageUrl(data.imageUrl);
-          setImageSource('fetch');
-          setIsImageLoading(false);
-        };
-        testImg.onerror = async () => {
-          // Method 2: Try through proxy if direct fails
-          console.log('Direct image failed, trying proxies...');
-          const proxiedImage = await fetchImageViaProxy(data.imageUrl, 0);
-          if (proxiedImage) {
-            setImageUrl(proxiedImage);
-            setImageSource('proxy');
-            setIsImageLoading(false);
-          } else {
-            setImageLoadError('Could not fetch image. Please upload manually or paste image URL.');
-            setIsImageLoading(false);
-          }
-        };
-        testImg.src = data.imageUrl;
-      } else {
-        setImageLoadError('No image found on product page. You can upload manually or paste image URL.');
-        setIsImageLoading(false);
-      }
-    } catch (error) {
-      console.error('Image fetch error:', error);
-      setImageLoadError('Failed to fetch image. Please upload manually or paste image URL.');
-      setIsImageLoading(false);
-    }
+    setImageUrl(manualImageUrl);
+    setImageSource('url');
+    setManualImageUrl('');
+    setShowManualImageInput(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -270,21 +265,9 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     onClose();
   };
 
-  const handleUsePreviewData = () => {
-    if (originalFetchedData) {
-      setTitle(originalFetchedData.title);
-      setPrice(originalFetchedData.price || '');
-      if (originalFetchedData.description) setDescription(originalFetchedData.description);
-      setEditMode(true);
-    }
-  };
-
-  const handleResetToFetchedData = () => {
-    if (originalFetchedData) {
-      setTitle(originalFetchedData.title);
-      setPrice(originalFetchedData.price || '');
-      if (originalFetchedData.description) setDescription(originalFetchedData.description);
-      setPlatform(originalFetchedData.platform || 'custom');
+  const retryFetch = () => {
+    if (buyLink) {
+      fetchEverything(buyLink);
     }
   };
 
@@ -302,271 +285,208 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
           {/* Product Link Input */}
           <div>
             <label className="block text-sm font-medium mb-1">Product Link *</label>
-            <div className="flex gap-2">
-              <input
-                type="url"
-                value={buyLink}
-                onChange={(e) => {
-                  setBuyLink(e.target.value);
-                  setEditMode(false);
-                  setShowPreview(false);
-                }}
-                placeholder="https://amazon.in/dp/... or https://amzn.to/..."
-                className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
-                required
-              />
-              <button
-                type="button"
-                onClick={fetchProductPreview}
-                disabled={fetchingPreview || !buyLink}
-                className="px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition disabled:opacity-50"
-              >
-                {fetchingPreview ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
-              </button>
-            </div>
-            {fetchError && <p className="text-xs text-red-500 mt-1">{fetchError}</p>}
+            <input
+              type="url"
+              value={buyLink}
+              onChange={(e) => {
+                setBuyLink(e.target.value);
+                setEditMode(true);
+              }}
+              placeholder="https://amazon.in/dp/... or https://amzn.to/..."
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
+              required
+            />
             <p className="text-xs text-gray-400 mt-1">
-              💡 Paste any product link. Title and description will be auto-filled if possible.
+              💡 Paste any product link. Title, description, price, and image will be auto-fetched.
             </p>
           </div>
 
-          {/* Product Preview Card */}
-          {showPreview && previewData && !editMode && (
-            <div className="border rounded-xl overflow-hidden bg-gray-50">
-              <div className="flex items-center justify-between p-2 bg-gray-100 border-b">
-                <div className="flex items-center gap-1">
-                  <Globe className="w-3 h-3 text-gray-500" />
-                  <span className="text-xs text-gray-500">Preview from {previewData.platform || 'web'}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={handleUsePreviewData}
-                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                  >
-                    <Check className="w-3 h-3" />
-                    Use this
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEditMode(true)}
-                    className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    Edit
-                  </button>
-                </div>
+          {/* Fetching Status */}
+          {isFetching && (
+            <div className="bg-blue-50 rounded-xl p-3">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                <span className="text-sm text-blue-600">Fetching product information...</span>
               </div>
-              <div className="p-3">
-                <p className="font-medium text-sm line-clamp-2">{previewData.title}</p>
-                {previewData.price && <p className="text-sm text-green-600 mt-1">{previewData.price}</p>}
-                <p className="text-xs text-gray-500 mt-1 line-clamp-3">{previewData.description}</p>
+              <div className="mt-2 space-y-1 text-xs text-blue-500">
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${fetchStatus.details === 'fetching' ? 'bg-blue-500 animate-pulse' : fetchStatus.details === 'success' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span>Product details (title, description, price)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className={`w-3 h-3 rounded-full ${fetchStatus.image === 'fetching' ? 'bg-blue-500 animate-pulse' : fetchStatus.image === 'success' ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <span>Product image (trying multiple methods)</span>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Edit Mode */}
-          {(editMode || !showPreview) && (
-            <div className="space-y-4">
-              {editMode && originalFetchedData && (
-                <button
-                  type="button"
-                  onClick={handleResetToFetchedData}
-                  className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  Reset to fetched data
-                </button>
-              )}
+          {/* Retry button if fetching failed */}
+          {!isFetching && buyLink && !title && !imageUrl && (
+            <div className="bg-yellow-50 rounded-xl p-3 text-center">
+              <p className="text-sm text-yellow-700 mb-2">Could not fetch product info automatically</p>
+              <button
+                type="button"
+                onClick={retryFetch}
+                className="text-sm text-yellow-700 underline hover:text-yellow-800"
+              >
+                Try again
+              </button>
+            </div>
+          )}
 
-              {/* Product Details */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Product Title *</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter product title"
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
-                  required
-                />
+          {/* Product Details Section */}
+          {(title || description || price) && (
+            <div className="border rounded-xl overflow-hidden">
+              <div className="bg-gray-50 px-3 py-2 border-b">
+                <span className="text-xs font-medium text-gray-600">Product Details</span>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Product description"
-                  rows={3}
-                  className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 space-y-3">
+                {/* Title */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Price</label>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
                   <input
                     type="text"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="$49.99"
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+                    placeholder="Product title"
+                    required
                   />
                 </div>
+
+                {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Platform</label>
-                  <select
-                    value={platform}
-                    onChange={(e) => setPlatform(e.target.value)}
-                    className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
-                  >
-                    <option value="amazon">Amazon</option>
-                    <option value="myntra">Myntra</option>
-                    <option value="flipkart">Flipkart</option>
-                    <option value="etsy">Etsy</option>
-                    <option value="custom">Other</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Image Source Options */}
-              <div>
-                <label className="block text-sm font-medium mb-2">Product Image *</label>
-
-                {/* Image source tabs */}
-                <div className="flex gap-1 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setImageSource('upload')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition ${
-                      imageSource === 'upload' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    <Upload className="w-3 h-3 inline mr-1" /> Upload
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageSource('url')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition ${
-                      imageSource === 'url' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    <LinkIcon className="w-3 h-3 inline mr-1" /> URL
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setImageSource('fetch')}
-                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition ${
-                      imageSource === 'fetch' ? 'bg-black text-white' : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    <Camera className="w-3 h-3 inline mr-1" /> Fetch
-                  </button>
+                  <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none resize-none"
+                    placeholder="Product description"
+                  />
                 </div>
 
-                {/* Upload from device */}
-                {imageSource === 'upload' && (
-                  <div
-                    {...getRootProps()}
-                    className={`border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition ${
-                      isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <input {...getInputProps()} />
-                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-500">
-                      {isDragActive ? 'Drop image here' : 'Click or drag to upload'}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF up to 5MB</p>
+                {/* Price & Platform */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
+                    <input
+                      type="text"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+                      placeholder="₹49,999"
+                    />
                   </div>
-                )}
-
-                {/* Paste image URL */}
-                {imageSource === 'url' && (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={manualImageUrl}
-                        onChange={(e) => setManualImageUrl(e.target.value)}
-                        placeholder="https://example.com/image.jpg"
-                        className="flex-1 px-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleManualImageUrl}
-                        disabled={isImageLoading || !manualImageUrl}
-                        className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition disabled:opacity-50"
-                      >
-                        {isImageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Add'}
-                      </button>
-                    </div>
-                    {imageLoadError && <p className="text-xs text-red-500">{imageLoadError}</p>}
-                    <p className="text-xs text-gray-400">
-                      💡 Tip: Right-click on any image and select "Copy image URL"
-                    </p>
-                  </div>
-                )}
-
-                {/* Fetch from product link with proxy support */}
-                {imageSource === 'fetch' && (
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      onClick={fetchImageFromLink}
-                      disabled={isImageLoading || !buyLink}
-                      className="w-full py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">Platform</label>
+                    <select
+                      value={platform}
+                      onChange={(e) => setPlatform(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
                     >
-                      {isImageLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
-                      {isImageLoading ? 'Fetching via proxies...' : 'Fetch Image from Product Link'}
-                    </button>
-
-                    {/* Show proxy attempts */}
-                    {proxyAttempts.length > 0 && (
-                      <div className="text-xs text-gray-500 space-y-1">
-                        <p className="font-medium">Trying proxies:</p>
-                        {proxyAttempts.map((attempt, i) => (
-                          <p key={i} className="ml-2">• {attempt}</p>
-                        ))}
-                      </div>
-                    )}
-
-                    {imageLoadError && <p className="text-xs text-red-500">{imageLoadError}</p>}
-                    <p className="text-xs text-gray-400">
-                      💡 Uses multiple proxy services to fetch images. If it fails, please upload manually.
-                    </p>
+                      <option value="amazon">Amazon</option>
+                      <option value="myntra">Myntra</option>
+                      <option value="flipkart">Flipkart</option>
+                      <option value="etsy">Etsy</option>
+                      <option value="custom">Other</option>
+                    </select>
                   </div>
-                )}
-
-                {/* Image preview */}
-                {imageUrl && (
-                  <div className="mt-3">
-                    <div className="relative">
-                      <img
-                        src={imageUrl}
-                        alt="Preview"
-                        className="w-full h-40 object-cover rounded-lg border"
-                        onError={(e) => {
-                          e.currentTarget.src = 'https://placehold.co/400x400?text=Invalid+Image';
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setImageUrl('')}
-                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* Final Preview */}
-          {title && imageUrl && (
+          {/* Product Image Section */}
+          <div className="border rounded-xl overflow-hidden">
+            <div className="bg-gray-50 px-3 py-2 border-b flex items-center justify-between">
+              <span className="text-xs font-medium text-gray-600">Product Image *</span>
+              {!imageUrl && !isFetching && (
+                <button
+                  type="button"
+                  onClick={() => setShowManualImageInput(!showManualImageInput)}
+                  className="text-xs text-blue-500 hover:text-blue-600"
+                >
+                  {showManualImageInput ? 'Cancel' : 'Add manually'}
+                </button>
+              )}
+            </div>
+            <div className="p-3">
+              {/* Auto-fetched image or uploaded image */}
+              {imageUrl ? (
+                <div className="relative">
+                  <img
+                    src={imageUrl}
+                    alt={title || 'Product'}
+                    className="w-full h-40 object-cover rounded-lg border"
+                    onError={(e) => {
+                      e.currentTarget.src = 'https://placehold.co/400x400?text=Invalid+Image';
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setImageUrl('')}
+                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                  <p className="text-xs text-gray-400 mt-1 text-center">
+                    {imageSource === 'auto' ? '✓ Auto-fetched' : imageSource === 'upload' ? '✓ Uploaded' : '✓ Manual entry'}
+                  </p>
+                </div>
+              ) : isFetching && fetchStatus.image === 'fetching' ? (
+                <div className="border-2 border-dashed rounded-xl p-8 text-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">Fetching image...</p>
+                  <p className="text-xs text-gray-400 mt-1">Trying multiple methods</p>
+                </div>
+              ) : showManualImageInput ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={manualImageUrl}
+                      onChange={(e) => setManualImageUrl(e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleManualImageUrl}
+                      disabled={!manualImageUrl}
+                      className="px-4 py-2 bg-black text-white rounded-lg text-sm hover:bg-gray-800 transition disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div
+                    {...getRootProps()}
+                    className="border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition hover:border-gray-400"
+                  >
+                    <input {...getInputProps()} />
+                    <Upload className="w-6 h-6 mx-auto text-gray-400 mb-1" />
+                    <p className="text-xs text-gray-500">Or drag & drop an image file</p>
+                  </div>
+                </div>
+              ) : !fetchStatus.image && !imageUrl ? (
+                <div className="border-2 border-dashed rounded-xl p-8 text-center">
+                  <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">No image fetched</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowManualImageInput(true)}
+                    className="mt-2 text-xs text-blue-500 hover:text-blue-600"
+                  >
+                    Add image manually
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Final Preview (only if all fields filled) */}
+          {title && imageUrl && buyLink && (
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs font-medium text-gray-500 mb-2">Final Preview:</p>
               <div className="flex items-center gap-3">
@@ -574,15 +494,10 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                   src={imageUrl}
                   alt={title}
                   className="w-12 h-12 rounded-lg object-cover"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.currentTarget.src = 'https://placehold.co/400x400?text=Invalid+Image';
-                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-1">{title}</p>
                   {price && <p className="text-xs text-green-600">{price}</p>}
-                  <p className="text-xs text-gray-500 line-clamp-2">{description}</p>
                   <a
                     href={buyLink}
                     target="_blank"
