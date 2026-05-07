@@ -11,6 +11,7 @@ import { useStudioData } from './hooks/useStudioData';
 import { useBackButton } from '@/app/hooks/useBackButton';
 import { useAuth } from '@/app/hooks/useAuth';
 import ProductImage from './components/ProductImage';
+import EditProductModal from './components/EditProductModal';
 
 // Lazy load heavy components
 const TemplateSelectorModal = lazy(() => import('../components/TemplateSelectorModal'));
@@ -47,8 +48,8 @@ const LinkItem = ({ link, textColorStyle, onDelete }: any) => (
   </div>
 );
 
-// Memoized product item component
-const ProductItem = ({ product, textColorStyle, onDelete }: any) => {
+// Memoized product item component with edit functionality
+const ProductItem = ({ product, textColorStyle, onDelete, onEdit }: any) => {
   const hasValidImage = product.imageUrl &&
                         product.imageUrl !== '' &&
                         product.imageUrl !== 'null' &&
@@ -80,6 +81,12 @@ const ProductItem = ({ product, textColorStyle, onDelete }: any) => {
         )}
         <div className="flex gap-2 mt-2">
           <button
+            onClick={() => onEdit(product)}
+            className="text-xs text-blue-500 hover:text-blue-700 transition"
+          >
+            Edit
+          </button>
+          <button
             onClick={() => { if (confirm(`Delete "${product.title}"?`)) onDelete(product.id); }}
             className="text-xs text-red-500 hover:text-red-700 transition"
           >
@@ -92,7 +99,7 @@ const ProductItem = ({ product, textColorStyle, onDelete }: any) => {
               rel="noopener noreferrer"
               className="text-xs text-blue-500 hover:text-blue-700 transition flex items-center gap-1"
             >
-              View Product <ExternalLink className="w-3 h-3" />
+              View <ExternalLink className="w-3 h-3" />
             </a>
           )}
         </div>
@@ -110,6 +117,8 @@ export default function StudioDashboard() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAddProductModal, setShowAddProductModal] = useState(false);
+  const [showEditProductModal, setShowEditProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
   const [userName, setUserName] = useState('');
   const [customUsername, setCustomUsername] = useState('');
   const [isEditingUsername, setIsEditingUsername] = useState(false);
@@ -128,7 +137,20 @@ export default function StudioDashboard() {
 
   const [useSeparateAdminStyle, setUseSeparateAdminStyle] = useState(false);
 
-  const { links, products, loading, portalSlug, addLink, addProduct, deleteLink, deleteProduct, fetchLinks, fetchProducts } = useStudioData();
+  // Destructure all needed functions from useStudioData
+  const {
+    links,
+    products,
+    loading,
+    portalSlug,
+    addLink,
+    addProduct,
+    updateProduct,
+    deleteLink,
+    deleteProduct,
+    fetchLinks,
+    fetchProducts
+  } = useStudioData();
 
   const handleGoToDashboard = useCallback(() => router.push('/dashboard'), [router]);
   useBackButton(handleGoToDashboard, true);
@@ -297,22 +319,28 @@ export default function StudioDashboard() {
     await addProduct(product);
   }, [canAddProduct, addProduct]);
 
+  const handleEditProduct = useCallback((product: any) => {
+    setEditingProduct(product);
+    setShowEditProductModal(true);
+  }, []);
+
+  const handleUpdateProduct = useCallback(async (id: string, updates: any) => {
+    await updateProduct(id, updates);
+  }, [updateProduct]);
+
   const getPublicUrl = useCallback(() => {
     if (typeof window === 'undefined') return '';
     const baseUrl = window.location.origin;
 
-    // If premium user has a custom username (different from slug), show custom URL
     if (isPremium && userName && userName !== portalSlug) {
       return `${baseUrl}/view/${userName}`;
     }
 
-    // Otherwise show slug URL
     return `${baseUrl}/view?slug=${portalSlug}`;
   }, [isPremium, userName, portalSlug]);
 
   const template = getTemplateById(adminSettings.templateId);
 
-  // Build background style with useMemo
   const backgroundStyle = useMemo(() => {
     const style: React.CSSProperties = {};
     let bgImageUrl = adminSettings.backgroundImage;
@@ -340,7 +368,6 @@ export default function StudioDashboard() {
     [adminSettings.textColor, template.defaultTextColor]);
   const fontClass = adminSettings.fontFamily || 'font-sans';
 
-  // Loading state
   if (authLoading || isLoadingSettings) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -421,7 +448,6 @@ export default function StudioDashboard() {
               </button>
             </div>
 
-            {/* Show custom URL if premium user has one */}
             {isPremium && userName && userName !== portalSlug ? (
               <>
                 <p className="font-mono text-xs break-all">
@@ -435,7 +461,6 @@ export default function StudioDashboard() {
               <p className="font-mono text-xs break-all">{getPublicUrl()}</p>
             )}
 
-            {/* Custom URL editor for premium users */}
             {isPremium ? (
               <div className="mt-3 pt-2 border-t border-white/20">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -454,7 +479,7 @@ export default function StudioDashboard() {
                       <button onClick={updateUsername} className="text-green-300 text-xs p-0.5 hover:bg-white/10 rounded">
                         <Check className="w-3 h-3" />
                       </button>
-                      <button onClick={() => { setIsEditingUsername(false); setCustomUsername(userName || portalSlug || ''); }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
+                      <button onClick={() => { setIsEditingUsername(false); setCustomUsername(userName); }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
                         <X className="w-3 h-3" />
                       </button>
                     </>
@@ -548,7 +573,13 @@ export default function StudioDashboard() {
             ) : (
               <div className="grid grid-cols-2 gap-3">
                 {products.map((product: any) => (
-                  <ProductItem key={product.id} product={product} textColorStyle={textColorStyle} onDelete={deleteProduct} />
+                  <ProductItem
+                    key={product.id}
+                    product={product}
+                    textColorStyle={textColorStyle}
+                    onDelete={deleteProduct}
+                    onEdit={handleEditProduct}
+                  />
                 ))}
               </div>
             )}
@@ -560,6 +591,17 @@ export default function StudioDashboard() {
       <Suspense fallback={null}>
         {showAddModal && <AddLinkModal onClose={() => setShowAddModal(false)} onSave={handleAddLink} />}
         {showAddProductModal && <AddProductModal onClose={() => setShowAddProductModal(false)} onSave={handleAddProduct} />}
+        {showEditProductModal && editingProduct && (
+          <EditProductModal
+            product={editingProduct}
+            onClose={() => {
+              setShowEditProductModal(false);
+              setEditingProduct(null);
+            }}
+            onSave={handleUpdateProduct}
+            onDelete={deleteProduct}
+          />
+        )}
         {showTemplateSelector && (
           <TemplateSelectorModal
             isPremium={isPremium}

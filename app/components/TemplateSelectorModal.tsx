@@ -1,10 +1,14 @@
 // app/components/TemplateSelectorModal.tsx
 'use client';
 
+
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getFreeTemplates, getPremiumTemplates, getTemplateById } from '@/lib/templates/index';
 import { useBackButton } from '@/app/hooks/useBackButton';
-import { Crown, Layers, RotateCcw, Sparkles, Palette, Type, Image as ImageIcon, Sun, Check, FolderOpen, Lock } from 'lucide-react';
+import { Header, LivePreview, TemplatesGrid } from './template-selector';
+import { Layers, RotateCcw, Sparkles, Palette, Type, Image as ImageIcon, Sun, Check, Shuffle, RefreshCw, Crown } from 'lucide-react';
+
+
 
 interface TemplateSelectorModalProps {
   isPremium: boolean;
@@ -26,11 +30,28 @@ interface TemplateSelectorModalProps {
   onStyleModeChange?: (useSeparate: boolean) => void;
 }
 
-interface PublicImage {
-  name: string;
-  url: string;
-  size: number;
-}
+// Random image sources
+const RANDOM_IMAGE_SOURCES = {
+  loremPicsum: 'https://picsum.photos/1920/1080?random=',
+  unsplash: 'https://source.unsplash.com/random/1920x1080',
+  placeholder: 'https://placehold.co/1920x1080',
+};
+
+// Function to get random Lorem Picsum image with a specific ID or random
+const getRandomLoremPicsum = (): string => {
+  const randomId = Math.floor(Math.random() * 1000);
+  return `https://picsum.photos/id/${randomId}/1920/1080`;
+};
+
+// Function to get random image from all sources
+const getRandomBackgroundImage = (): string => {
+  const sources = [
+    getRandomLoremPicsum(),
+    `${RANDOM_IMAGE_SOURCES.loremPicsum}${Date.now()}`,
+    `${RANDOM_IMAGE_SOURCES.unsplash}&${Date.now()}`,
+  ];
+  return sources[Math.floor(Math.random() * sources.length)];
+};
 
 // Preset gradients for quick selection
 const presetGradients = [
@@ -88,9 +109,6 @@ export default function TemplateSelectorModal({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<'background' | 'text'>('background');
   const [localUseSeparateStyle, setLocalUseSeparateStyle] = useState(useSeparateStyle);
-  const [publicImages, setPublicImages] = useState<PublicImage[]>([]);
-  const [showImageSelector, setShowImageSelector] = useState(false);
-  const [imageSearchTerm, setImageSearchTerm] = useState('');
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isClosingRef = useRef(false);
@@ -103,23 +121,6 @@ export default function TemplateSelectorModal({
     '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', '#6366f1',
     '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#78716c'
   ];
-
-  // Load public images
-  useEffect(() => {
-    fetch('/api/images/list')
-      .then(res => res.json())
-      .then(data => {
-        if (data.images) {
-          setPublicImages(data.images);
-        }
-      })
-      .catch(console.error);
-  }, []);
-
-  // Filter images based on search
-  const filteredImages = publicImages.filter(img =>
-    img.name.toLowerCase().includes(imageSearchTerm.toLowerCase())
-  );
 
   const safeClose = useCallback(() => {
     if (isClosingRef.current) return;
@@ -258,7 +259,6 @@ export default function TemplateSelectorModal({
     handleUserInteraction();
 
     const defaultTemplate = getTemplateById('template1');
-
     setPreviewTemplate('template1');
     setBackgroundType('image');
     setGradientStart(defaultTemplate.gradientColors.start);
@@ -305,7 +305,10 @@ export default function TemplateSelectorModal({
     setShowResetConfirm(false);
   };
 
-  const getConfig = () => {
+  const handleApply = async () => {
+    handleUserInteraction();
+    setApplying(true);
+
     let finalBackgroundImage = backgroundImage;
 
     if (backgroundType === 'image' && backgroundImage &&
@@ -316,6 +319,7 @@ export default function TemplateSelectorModal({
     }
 
     const config: any = {
+      target: 'public',
       templateId: previewTemplate,
       fontFamily: selectedFont,
       backgroundType: backgroundType,
@@ -339,34 +343,12 @@ export default function TemplateSelectorModal({
       config.gradientEnd = '';
     }
 
-    return config;
-  };
-
-  const applyToPublic = async () => {
-    handleUserInteraction();
-    setApplying(true);
-    const config = getConfig();
-    await onSelectTemplate({ ...config, target: 'public' });
+    await onSelectTemplate(config);
     setApplying(false);
+
     setInitialValues({
       previewTemplate, backgroundColor, backgroundType, gradientStart, gradientEnd,
-      backgroundImage, textColor: customTextColor, fontFamily: selectedFont,
-    });
-  };
-
-  const applyToAdmin = async () => {
-    if (!isPremium) {
-      alert('✨ Admin panel customization is a premium feature. Please upgrade!');
-      return;
-    }
-    handleUserInteraction();
-    setApplying(true);
-    const config = getConfig();
-    await onSelectTemplate({ ...config, target: 'admin' });
-    setApplying(false);
-    setInitialValues({
-      previewTemplate, backgroundColor, backgroundType, gradientStart, gradientEnd,
-      backgroundImage, textColor: customTextColor, fontFamily: selectedFont,
+      backgroundImage: finalBackgroundImage, textColor: customTextColor, fontFamily: selectedFont,
     });
   };
 
@@ -423,17 +405,49 @@ export default function TemplateSelectorModal({
               </div>
             </div>
 
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-red-50 text-red-600 hover:bg-red-100 transition"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Reset
-            </button>
+            <div className="flex items-center gap-2">
+              {isPremium && (
+                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 mr-2">
+                  <button
+                    onClick={() => {
+                      setLocalUseSeparateStyle(false);
+                      onStyleModeChange?.(false);
+                      handleUserInteraction();
+                    }}
+                    className={`px-2 py-1 rounded-md text-xs transition ${
+                      !localUseSeparateStyle
+                        ? 'bg-white shadow-sm text-gray-900'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Same
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLocalUseSeparateStyle(true);
+                      onStyleModeChange?.(true);
+                      handleUserInteraction();
+                    }}
+                    className={`px-2 py-1 rounded-md text-xs transition ${
+                      localUseSeparateStyle
+                        ? 'bg-white shadow-sm text-gray-900'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Different
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-red-50 text-red-600 hover:bg-red-100 transition"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset
+              </button>
+            </div>
           </div>
         </div>
-
-
 
         {/* Timer Bar */}
         <div className="sticky top-[57px] z-20 bg-white px-4 pt-1 pb-2">
@@ -521,12 +535,11 @@ export default function TemplateSelectorModal({
                   </div>
                 </div>
 
-                {/* Premium Templates - Locked for non-premium */}
+                {/* Premium Templates */}
                 <div>
                   <div className="flex items-center gap-1 mb-2">
                     <Crown className="w-3 h-3 text-yellow-500" />
                     <span className="text-xs font-medium text-gray-600">Premium Collection</span>
-                    {!isPremium && <Lock className="w-3 h-3 text-gray-400" />}
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     {premiumTemplates.map((template) => (
@@ -548,13 +561,8 @@ export default function TemplateSelectorModal({
                           </p>
                         </div>
                         {!isPremium && (
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onUpgradeClick(); }}
-                              className="text-[10px] text-white bg-yellow-500 px-2 py-1 rounded-full hover:bg-yellow-600 transition"
-                            >
-                              Upgrade
-                            </button>
+                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <span className="text-[10px] text-white bg-yellow-500 px-1.5 py-0.5 rounded-full">Premium</span>
                           </div>
                         )}
                       </button>
@@ -688,83 +696,115 @@ export default function TemplateSelectorModal({
 
                 {backgroundType === 'image' && (
                   <div className="space-y-3">
+                    {/* Image URL Input */}
                     <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Image URL or Name</label>
-                      <input
-                        type="text"
-                        placeholder="/images/your-image.jpg or https://example.com/image.jpg"
-                        value={backgroundImage}
-                        onChange={(e) => setBackgroundImage(e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg text-sm"
-                      />
+                      <label className="text-xs text-gray-500 mb-1 block">Image URL</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={backgroundImage}
+                          onChange={(e) => setBackgroundImage(e.target.value)}
+                          placeholder="/images/photo.jpg or https://example.com/image.jpg"
+                          className="flex-1 px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
+                        />
+                      </div>
                       <p className="text-[10px] text-gray-400 mt-1">
-                        💡 Tip: Just type image filename (e.g., "default-bg.jpg") or full URL
+                        💡 Tip: Enter a local path (/images/photo.jpg) or full URL
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => setShowImageSelector(!showImageSelector)}
-                      className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 rounded-lg text-sm hover:bg-gray-200 transition"
-                    >
-                      <FolderOpen className="w-4 h-4" />
-                      {showImageSelector ? 'Hide' : 'Browse'} Public Images
-                    </button>
-
-                    {showImageSelector && (
-                      <div className="border rounded-lg p-2">
-                        <input
-                          type="text"
-                          placeholder="Search images..."
-                          value={imageSearchTerm}
-                          onChange={(e) => setImageSearchTerm(e.target.value)}
-                          className="w-full px-2 py-1 border rounded text-sm mb-2"
-                        />
-                        <div className="max-h-48 overflow-y-auto space-y-1">
-                          {filteredImages.length === 0 ? (
-                            <p className="text-xs text-gray-400 text-center py-2">
-                              No images found in /public/images folder
-                            </p>
-                          ) : (
-                            filteredImages.map((img) => (
-                              <button
-                                key={img.name}
-                                onClick={() => {
-                                  setBackgroundImage(img.url);
-                                  setShowImageSelector(false);
-                                  setImageSearchTerm('');
-                                }}
-                                className={`w-full flex items-center gap-2 p-2 rounded text-left hover:bg-gray-50 transition ${
-                                  backgroundImage === img.url ? 'bg-purple-50 ring-1 ring-purple-500' : ''
-                                }`}
-                              >
-                                <img src={img.url} alt={img.name} className="w-8 h-8 rounded object-cover" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium truncate">{img.name}</p>
-                                  <p className="text-[10px] text-gray-400">
-                                    {(img.size / 1024).toFixed(1)} KB
-                                  </p>
-                                </div>
-                                {backgroundImage === img.url && (
-                                  <Check className="w-4 h-4 text-purple-500" />
-                                )}
-                              </button>
-                            ))
-                          )}
-                        </div>
+                    {/* Random Image Buttons */}
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Try Random Images</label>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const randomImage = getRandomBackgroundImage();
+                            setBackgroundImage(randomImage);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs hover:opacity-90 transition"
+                        >
+                          <Shuffle className="w-3 h-3" />
+                          Random
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newImage = getRandomLoremPicsum();
+                            setBackgroundImage(newImage);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200 transition"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Lorem Picsum
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBackgroundImage(`${RANDOM_IMAGE_SOURCES.unsplash}&${Date.now()}`)}
+                          className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200 transition"
+                        >
+                          🌄 Unsplash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBackgroundImage(`${RANDOM_IMAGE_SOURCES.loremPicsum}${Date.now()}`)}
+                          className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200 transition"
+                        >
+                          🖼️ Picsum
+                        </button>
                       </div>
-                    )}
+                    </div>
 
-                    {backgroundImage && backgroundImage.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i) && (
+                    {/* Category-based random images */}
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">By Category</label>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setBackgroundImage(`https://picsum.photos/id/15/1920/1080`)}
+                          className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs hover:bg-emerald-200 transition"
+                        >
+                          🌿 Nature
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBackgroundImage(`https://picsum.photos/id/104/1920/1080`)}
+                          className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200 transition"
+                        >
+                          🏔️ Landscape
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBackgroundImage(`https://picsum.photos/id/20/1920/1080`)}
+                          className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs hover:bg-amber-200 transition"
+                        >
+                          ☕ Cozy
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setBackgroundImage(`https://picsum.photos/id/0/1920/1080`)}
+                          className="px-3 py-1.5 bg-cyan-100 text-cyan-700 rounded-lg text-xs hover:bg-cyan-200 transition"
+                        >
+                          🏞️ Scenic
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Current Image Preview */}
+                    {backgroundImage && (backgroundImage.startsWith('http') || backgroundImage.startsWith('/')) && (
                       <div className="mt-2">
                         <label className="text-xs text-gray-500 mb-1 block">Preview</label>
-                        <img
-                          src={backgroundImage}
-                          alt="Background preview"
-                          className="w-full h-24 object-cover rounded-lg border"
-                          onError={(e) => {
-                            e.currentTarget.src = 'https://placehold.co/400x200?text=Invalid+Image';
-                          }}
-                        />
+                        <div className="relative">
+                          <img
+                            src={backgroundImage}
+                            alt="Background preview"
+                            className="w-full h-24 object-cover rounded-lg border"
+                            onError={(e) => {
+                              e.currentTarget.src = 'https://placehold.co/1920x1080?text=Invalid+Image';
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -826,47 +866,22 @@ export default function TemplateSelectorModal({
           </div>
         </div>
 
-        {/* Footer - Simple Two Buttons */}
+        {/* Footer with Apply Button */}
         <div className="sticky bottom-0 bg-white border-t p-3 rounded-b-xl">
-          <div className="flex gap-3">
-            <button
-              onClick={applyToPublic}
-              disabled={applying}
-              className="flex-1 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {applying ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-              ) : (
-                <>
-                  <Check className="w-4 h-4" />
-                  Apply to Public
-                </>
-              )}
-            </button>
-            <button
-              onClick={applyToAdmin}
-              disabled={applying || !isPremium}
-              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-                isPremium
-                  ? 'bg-purple-600 text-white hover:bg-purple-700'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              {applying ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-              ) : (
-                <>
-                  <Palette className="w-4 h-4" />
-                  Apply to Admin {!isPremium && '🔒'}
-                </>
-              )}
-            </button>
-          </div>
-          {!isPremium && (
-            <p className="text-[10px] text-gray-400 text-center mt-2">
-              ✨ Upgrade to Premium to customize your admin panel separately
-            </p>
-          )}
+          <button
+            onClick={handleApply}
+            disabled={applying}
+            className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {applying ? (
+              'Applying...'
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Apply Theme
+              </>
+            )}
+          </button>
         </div>
       </div>
 

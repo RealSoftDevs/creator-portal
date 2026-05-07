@@ -85,11 +85,42 @@ export function useStudioData() {
     return true;
   };
 
-  const deleteProduct = async (id: string) => {
-    await fetch(`/api/portal/products?id=${id}`, { method: 'DELETE' });
-    await fetchProducts();
-    return true;
-  };
+  const updateProduct = async (id: string, updates: any) => {
+      try {
+        const res = await fetch(`/api/portal/products/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+        if (res.ok) {
+          await fetchProducts();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('Update product error:', error);
+        return false;
+      }
+    };
+
+
+    // Also add deleteProduct if not already there
+    const deleteProduct = async (id: string) => {
+      try {
+        const res = await fetch(`/api/portal/products/${id}`, {
+          method: 'DELETE',
+        });
+        if (res.ok) {
+          await fetchProducts();
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error('Delete product error:', error);
+        return false;
+      }
+    };
+
 
   const loadData = async () => {
     await fetchPortalInfo();
@@ -109,6 +140,7 @@ export function useStudioData() {
     addLink,
     addProduct,
     deleteLink,
+    updateProduct,
     deleteProduct,
     fetchLinks,
     fetchProducts,
