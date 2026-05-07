@@ -64,10 +64,10 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     for (const res of results) {
       if (res.status === 'fulfilled' && res.value) {
         result = {
-          title: result.title || res.value.title,
-          description: result.description || res.value.description,
-          price: result.price || res.value.price,
-          imageUrl: result.imageUrl || res.value.imageUrl,
+          title: result.title || (res.value.title || ''),
+          description: result.description || (res.value.description || ''),
+          price: result.price || (res.value.price || ''),
+          imageUrl: result.imageUrl || (res.value.imageUrl || ''),
         };
       }
     }
@@ -469,7 +469,7 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                     <p className="text-xs text-gray-500">Or drag & drop an image file</p>
                   </div>
                 </div>
-              ) : !fetchStatus.image && !imageUrl ? (
+              ) : !imageUrl && fetchStatus.image === 'failed' ? (
                 <div className="border-2 border-dashed rounded-xl p-8 text-center">
                   <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                   <p className="text-sm text-gray-500">No image fetched</p>
