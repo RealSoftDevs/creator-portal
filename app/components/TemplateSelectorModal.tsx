@@ -1,14 +1,11 @@
 // app/components/TemplateSelectorModal.tsx
 'use client';
 
-
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getFreeTemplates, getPremiumTemplates, getTemplateById } from '@/lib/templates/index';
 import { useBackButton } from '@/app/hooks/useBackButton';
 import { Header, LivePreview, TemplatesGrid } from './template-selector';
 import { Layers, RotateCcw, Sparkles, Palette, Type, Image as ImageIcon, Sun, Check, Shuffle, RefreshCw, Crown } from 'lucide-react';
-
-
 
 interface TemplateSelectorModalProps {
   isPremium: boolean;
@@ -31,28 +28,45 @@ interface TemplateSelectorModalProps {
 }
 
 // Random image sources
+// Working random image sources
 const RANDOM_IMAGE_SOURCES = {
-  loremPicsum: 'https://picsum.photos/1920/1080?random=',
-  unsplash: 'https://source.unsplash.com/random/1920x1080',
+  picsum: 'https://picsum.photos/1920/1080',
+  picsumWithId: 'https://picsum.photos/id/',
+  cloudimage: 'https://picsum.photos/1920/1080?grayscale',
   placeholder: 'https://placehold.co/1920x1080',
 };
 
-// Function to get random Lorem Picsum image with a specific ID or random
+// Function to get random Lorem Picsum image with a specific ID
 const getRandomLoremPicsum = (): string => {
   const randomId = Math.floor(Math.random() * 1000);
   return `https://picsum.photos/id/${randomId}/1920/1080`;
 };
 
-// Function to get random image from all sources
-const getRandomBackgroundImage = (): string => {
-  const sources = [
-    getRandomLoremPicsum(),
-    `${RANDOM_IMAGE_SOURCES.loremPicsum}${Date.now()}`,
-    `${RANDOM_IMAGE_SOURCES.unsplash}&${Date.now()}`,
-  ];
-  return sources[Math.floor(Math.random() * sources.length)];
+// Function to get random image from picsum (simpler)
+const getRandomPicsum = (): string => {
+  return `https://picsum.photos/1920/1080?random=${Date.now()}`;
 };
 
+// Function to get random nature image from picsum
+const getRandomNatureImage = (): string => {
+  const natureIds = [15, 104, 29, 42, 96, 116, 18, 30, 39, 80];
+  const randomId = natureIds[Math.floor(Math.random() * natureIds.length)];
+  return `https://picsum.photos/id/${randomId}/1920/1080`;
+};
+
+// Function to get random city image from picsum
+const getRandomCityImage = (): string => {
+  const cityIds = [20, 23, 91, 101, 105, 106, 107];
+  const randomId = cityIds[Math.floor(Math.random() * cityIds.length)];
+  return `https://picsum.photos/id/${randomId}/1920/1080`;
+};
+
+// Function to get random dark image from picsum
+const getRandomDarkImage = (): string => {
+  const darkIds = [0, 25, 37, 48, 57, 59, 69, 77];
+  const randomId = darkIds[Math.floor(Math.random() * darkIds.length)];
+  return `https://picsum.photos/id/${randomId}/1920/1080`;
+};
 // Preset gradients for quick selection
 const presetGradients = [
   { name: 'Sunset', start: '#e11d48', end: '#facc15' },
@@ -109,6 +123,7 @@ export default function TemplateSelectorModal({
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState<'background' | 'text'>('background');
   const [localUseSeparateStyle, setLocalUseSeparateStyle] = useState(useSeparateStyle);
+  const [applyTarget, setApplyTarget] = useState<'public' | 'admin'>('public');
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isClosingRef = useRef(false);
@@ -305,52 +320,62 @@ export default function TemplateSelectorModal({
     setShowResetConfirm(false);
   };
 
-  const handleApply = async () => {
-    handleUserInteraction();
-    setApplying(true);
+const handleApply = async (target: 'public' | 'admin') => {
+  handleUserInteraction();
+  setApplying(true);
 
-    let finalBackgroundImage = backgroundImage;
+  // Build config fresh using current state values
+  let finalBackgroundImage = backgroundImage;
 
-    if (backgroundType === 'image' && backgroundImage &&
-        !backgroundImage.startsWith('http') &&
-        !backgroundImage.startsWith('/') &&
-        !backgroundImage.startsWith('data:')) {
-      finalBackgroundImage = `/images/${backgroundImage}`;
-    }
+  if (backgroundType === 'image' && backgroundImage &&
+      !backgroundImage.startsWith('http') &&
+      !backgroundImage.startsWith('/') &&
+      !backgroundImage.startsWith('data:')) {
+    finalBackgroundImage = `/images/${backgroundImage}`;
+  }
 
-    const config: any = {
-      target: 'public',
-      templateId: previewTemplate,
-      fontFamily: selectedFont,
-      backgroundType: backgroundType,
-      textColor: customTextColor,
-    };
+  const config: any = {
+    target: target,
+    templateId: previewTemplate,
+    fontFamily: selectedFont,
+    backgroundType: backgroundType,
+    textColor: customTextColor,
+  };
 
-    if (backgroundType === 'color') {
-      config.primaryColor = backgroundColor;
-      config.backgroundImage = '';
-      config.gradientStart = '';
-      config.gradientEnd = '';
-    } else if (backgroundType === 'gradient') {
-      config.gradientStart = gradientStart;
-      config.gradientEnd = gradientEnd;
-      config.primaryColor = '';
-      config.backgroundImage = '';
-    } else if (backgroundType === 'image') {
-      config.backgroundImage = finalBackgroundImage;
-      config.primaryColor = '';
-      config.gradientStart = '';
-      config.gradientEnd = '';
-    }
+  if (backgroundType === 'color') {
+    config.primaryColor = backgroundColor;
+    config.backgroundImage = '';
+    config.gradientStart = '';
+    config.gradientEnd = '';
+  } else if (backgroundType === 'gradient') {
+    config.gradientStart = gradientStart;
+    config.gradientEnd = gradientEnd;
+    config.primaryColor = '';
+    config.backgroundImage = '';
+  } else if (backgroundType === 'image') {
+    config.backgroundImage = finalBackgroundImage;
+    config.primaryColor = '';
+    config.gradientStart = '';
+    config.gradientEnd = '';
+  }
 
-    await onSelectTemplate(config);
-    setApplying(false);
+  console.log(`🎨 Applying theme to ${target}:`, config);
 
+  const success = await onSelectTemplate(config);
+
+  if (success) {
+    console.log(`✅ Successfully applied to ${target}`);
+    // Update initial values only for the applied target
     setInitialValues({
       previewTemplate, backgroundColor, backgroundType, gradientStart, gradientEnd,
       backgroundImage: finalBackgroundImage, textColor: customTextColor, fontFamily: selectedFont,
     });
-  };
+  } else {
+    console.error(`❌ Failed to apply to ${target}`);
+  }
+
+  setApplying(false);
+};
 
   const getPreviewStyle = (): React.CSSProperties => {
     const style: React.CSSProperties = {
@@ -406,38 +431,7 @@ export default function TemplateSelectorModal({
             </div>
 
             <div className="flex items-center gap-2">
-              {isPremium && (
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5 mr-2">
-                  <button
-                    onClick={() => {
-                      setLocalUseSeparateStyle(false);
-                      onStyleModeChange?.(false);
-                      handleUserInteraction();
-                    }}
-                    className={`px-2 py-1 rounded-md text-xs transition ${
-                      !localUseSeparateStyle
-                        ? 'bg-white shadow-sm text-gray-900'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Same
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLocalUseSeparateStyle(true);
-                      onStyleModeChange?.(true);
-                      handleUserInteraction();
-                    }}
-                    className={`px-2 py-1 rounded-md text-xs transition ${
-                      localUseSeparateStyle
-                        ? 'bg-white shadow-sm text-gray-900'
-                        : 'text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Different
-                  </button>
-                </div>
-              )}
+
               <button
                 onClick={() => setShowResetConfirm(true)}
                 className="flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-red-50 text-red-600 hover:bg-red-100 transition"
@@ -713,49 +707,106 @@ export default function TemplateSelectorModal({
                       </p>
                     </div>
 
-                    {/* Random Image Buttons */}
-                    <div>
-                      <label className="text-xs text-gray-500 mb-1 block">Try Random Images</label>
-                      <div className="flex gap-2 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const randomImage = getRandomBackgroundImage();
-                            setBackgroundImage(randomImage);
-                          }}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs hover:opacity-90 transition"
-                        >
-                          <Shuffle className="w-3 h-3" />
-                          Random
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newImage = getRandomLoremPicsum();
-                            setBackgroundImage(newImage);
-                          }}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200 transition"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                          Lorem Picsum
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setBackgroundImage(`${RANDOM_IMAGE_SOURCES.unsplash}&${Date.now()}`)}
-                          className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200 transition"
-                        >
-                          🌄 Unsplash
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setBackgroundImage(`${RANDOM_IMAGE_SOURCES.loremPicsum}${Date.now()}`)}
-                          className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200 transition"
-                        >
-                          🖼️ Picsum
-                        </button>
-                      </div>
-                    </div>
+                     {/* Random Image Buttons */}
+                     <div>
+                       <label className="text-xs text-gray-500 mb-1 block">Try Random Images</label>
+                       <div className="flex gap-2 flex-wrap">
+                         <button
+                           type="button"
+                           onClick={() => {
+                             const randomImage = getRandomPicsum();
+                             setBackgroundImage(randomImage);
+                           }}
+                           className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg text-xs hover:opacity-90 transition"
+                         >
+                           <Shuffle className="w-3 h-3" />
+                           Random
+                         </button>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             const newImage = getRandomLoremPicsum();
+                             setBackgroundImage(newImage);
+                           }}
+                           className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-xs hover:bg-gray-200 transition"
+                         >
+                           <RefreshCw className="w-3 h-3" />
+                               Lorem Picsum
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 const natureImage = getRandomNatureImage();
+                                 setBackgroundImage(natureImage);
+                               }}
+                               className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs hover:bg-emerald-200 transition"
+                             >
+                               🌿 Nature
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 const cityImage = getRandomCityImage();
+                                 setBackgroundImage(cityImage);
+                               }}
+                               className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-xs hover:bg-blue-200 transition"
+                             >
+                               🌆 City
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => {
+                                 const darkImage = getRandomDarkImage();
+                                 setBackgroundImage(darkImage);
+                               }}
+                               className="px-3 py-1.5 bg-gray-800 text-white rounded-lg text-xs hover:bg-gray-900 transition"
+                             >
+                               🌙 Dark
+                             </button>
+                           </div>
+                         </div>
 
+                         {/* Category-based random images - using specific nice images */}
+                         <div>
+                           <label className="text-xs text-gray-500 mb-1 block">Popular Backgrounds</label>
+                           <div className="flex gap-2 flex-wrap">
+                             <button
+                               type="button"
+                               onClick={() => setBackgroundImage(`https://picsum.photos/id/104/1920/1080`)}
+                               className="px-3 py-1.5 bg-amber-100 text-amber-700 rounded-lg text-xs hover:bg-amber-200 transition"
+                             >
+                               🏔️ Mountain
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setBackgroundImage(`https://picsum.photos/id/15/1920/1080`)}
+                               className="px-3 py-1.5 bg-green-100 text-green-700 rounded-lg text-xs hover:bg-green-200 transition"
+                             >
+                               🌲 Forest
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setBackgroundImage(`https://picsum.photos/id/30/1920/1080`)}
+                               className="px-3 py-1.5 bg-sky-100 text-sky-700 rounded-lg text-xs hover:bg-sky-200 transition"
+                             >
+                               ☁️ Clouds
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setBackgroundImage(`https://picsum.photos/id/96/1920/1080`)}
+                               className="px-3 py-1.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs hover:bg-indigo-200 transition"
+                             >
+                               🏔️ Polar
+                             </button>
+                             <button
+                               type="button"
+                               onClick={() => setBackgroundImage(`https://picsum.photos/id/42/1920/1080`)}
+                               className="px-3 py-1.5 bg-cyan-100 text-cyan-700 rounded-lg text-xs hover:bg-cyan-200 transition"
+                             >
+                               🎹 Piano
+                             </button>
+                           </div>
+                         </div>
                     {/* Category-based random images */}
                     <div>
                       <label className="text-xs text-gray-500 mb-1 block">By Category</label>
@@ -866,22 +917,59 @@ export default function TemplateSelectorModal({
           </div>
         </div>
 
-        {/* Footer with Apply Button */}
+        {/* Footer with Apply Buttons */}
         <div className="sticky bottom-0 bg-white border-t p-3 rounded-b-xl">
-          <button
-            onClick={handleApply}
-            disabled={applying}
-            className="w-full py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {applying ? (
-              'Applying...'
-            ) : (
-              <>
-                <Check className="w-4 h-4" />
-                Apply Theme
-              </>
-            )}
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                console.log('🖱️ Apply to Public button clicked');
+                handleApply('public');
+              }}
+              disabled={applying}
+              className="flex-1 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {applying ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  Apply to Public
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                if (!isPremium) {
+                  alert('✨ Admin panel customization is a premium feature. Please upgrade!');
+                  return;
+                }
+                console.log('🖱️ Apply to Admin button clicked');
+                handleApply('admin');
+              }}
+              disabled={applying || !isPremium}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
+                isPremium
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
+                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              {applying ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+              ) : (
+                <>
+                  <Palette className="w-4 h-4" />
+                  Apply to Admin {!isPremium && '🔒'}
+                </>
+              )}
+            </button>
+          </div>
+
+          {!isPremium && (
+            <p className="text-[10px] text-gray-400 text-center mt-2">
+              ✨ Upgrade to Premium to customize your admin panel separately
+            </p>
+          )}
         </div>
       </div>
 

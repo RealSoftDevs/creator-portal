@@ -266,6 +266,8 @@ export default function StudioDashboard() {
 
   const updateTemplate = useCallback(async (config: any) => {
     try {
+      console.log(`📤 Sending update request for target: ${config.target}`);
+
       const response = await fetch('/api/portal/update-template', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -273,21 +275,29 @@ export default function StudioDashboard() {
       });
       const data = await response.json();
 
-      if (data.success && config.target === 'admin') {
-        setAdminSettings(prev => ({
-          ...prev,
-          templateId: config.templateId,
-          primaryColor: config.primaryColor,
-          textColor: config.textColor || '',
-          fontFamily: config.fontFamily || 'font-sans',
-          backgroundType: config.backgroundType,
-          gradientStart: config.gradientStart || '',
-          gradientEnd: config.gradientEnd || '',
-          backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
-        }));
-        setUseSeparateAdminStyle(true);
+      if (data.success) {
+        console.log(`✅ Successfully updated ${config.target} settings`);
+
+        if (config.target === 'admin') {
+          setAdminSettings(prev => ({
+            ...prev,
+            templateId: config.templateId,
+            primaryColor: config.primaryColor,
+            textColor: config.textColor || '',
+            fontFamily: config.fontFamily || 'font-sans',
+            backgroundType: config.backgroundType,
+            gradientStart: config.gradientStart || '',
+            gradientEnd: config.gradientEnd || '',
+            backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
+          }));
+          setUseSeparateAdminStyle(true);
+        } else if (config.target === 'public') {
+          // Optionally update public settings if needed
+          console.log('Public settings updated');
+        }
+        return true;
       }
-      return data.success;
+      return false;
     } catch (error) {
       console.error('Error updating template:', error);
       return false;
@@ -409,35 +419,7 @@ export default function StudioDashboard() {
         </div>
 
         <div className="max-w-md mx-auto px-4 py-6">
-          {/* Style Mode Toggle */}
-          {isPremium && (
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 mb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Layers className="w-4 h-4" style={textColorStyle} />
-                  <span className="text-sm" style={textColorStyle}>Style Mode</span>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setUseSeparateAdminStyle(false)}
-                    className={`px-3 py-1 rounded-lg text-xs transition ${
-                      !useSeparateAdminStyle ? 'bg-black text-white' : 'bg-white/20 text-white/70 hover:bg-white/30'
-                    }`}
-                  >
-                    Same for both
-                  </button>
-                  <button
-                    onClick={() => setUseSeparateAdminStyle(true)}
-                    className={`px-3 py-1 rounded-lg text-xs transition ${
-                      useSeparateAdminStyle ? 'bg-black text-white' : 'bg-white/20 text-white/70 hover:bg-white/30'
-                    }`}
-                  >
-                    Different styles
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+
 
           {/* Public Page Card */}
           <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white mb-6">
