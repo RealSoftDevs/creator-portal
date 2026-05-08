@@ -5,30 +5,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="16c32d87-c3d0-486e-a843-119911e5d2e9" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/api/portal/profile/route.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/studio/components/ProfileSettingsModal.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/studio/components/TemplateSelector.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/studio/layout.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data.txt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/fetch.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/cache.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/categories.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/upload.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/upload_1.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/studio/components/DisplaySettingsModal.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/settings.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/api/image-proxy/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/image-proxy/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/products/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/products/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/public/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/public/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/product-preview/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/product-preview/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/components/OptimizedImage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/OptimizedImage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/components/AddProductModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/AddProductModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/components/EditProductModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/EditProductModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/studio/components/GallerySection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/GallerySection.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/hooks/useStudioData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/hooks/useStudioData.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/studio/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/view/[username]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/view/[username]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/types/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/types/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/creator_full_snapshot.txt" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

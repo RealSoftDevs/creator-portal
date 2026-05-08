@@ -22,11 +22,11 @@ export default function OptimizedImage({
   height = 400,
   className = '',
   priority = false,
-  quality = 80,
+  quality = 75,
   sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
 }: OptimizedImageProps) {
   const [error, setError] = useState(false);
-  const [imageSrc, setImageSrc] = useState<string>('');
+  const [optimizedSrc, setOptimizedSrc] = useState<string>('');
 
   useEffect(() => {
     if (!src) {
@@ -36,17 +36,24 @@ export default function OptimizedImage({
 
     // Optimize Cloudinary URLs
     if (src.includes('cloudinary.com')) {
-      // Add Cloudinary optimizations
       const url = new URL(src);
       url.searchParams.set('q', quality.toString());
       url.searchParams.set('f', 'auto');
-      setImageSrc(url.toString());
-    } else {
-      setImageSrc(src);
+      url.searchParams.set('w', width.toString());
+      url.searchParams.set('h', height.toString());
+      url.searchParams.set('c', 'limit');
+      setOptimizedSrc(url.toString());
     }
-  }, [src, quality]);
+    // Proxy external images
+    else if (src.startsWith('http')) {
+      setOptimizedSrc(`/api/image-proxy?url=${encodeURIComponent(src)}&w=${width}&q=${quality}`);
+    }
+    else {
+      setOptimizedSrc(src);
+    }
+  }, [src, width, height, quality]);
 
-  if (error || !imageSrc) {
+  if (error || !optimizedSrc) {
     return (
       <div className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${className}`}>
         <div className="text-center">
@@ -62,7 +69,7 @@ export default function OptimizedImage({
   return (
     <div className="relative w-full h-full overflow-hidden">
       <Image
-        src={imageSrc}
+        src={optimizedSrc}
         alt={alt}
         width={width}
         height={height}

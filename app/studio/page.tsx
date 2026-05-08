@@ -1,26 +1,9 @@
 // app/studio/page.tsx
 'use client';
-import MobileSidebar from './components/MobileSidebar';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Settings,
-  User,
-  LogOut,
-  Menu,
-  X,
-  Layout,
-  Palette,
-  Link2,
-  Package,
-  Image as ImageIcon,
-  Sparkles,
-  Crown,
-  Eye,
-  Save,
-  RefreshCw
-} from 'lucide-react';
+import { Settings, User, LogOut, Layout, Palette, Link2, Package, Sparkles, Eye, Save, RefreshCw, X, Upload } from 'lucide-react';
 import { useStudioData } from './hooks/useStudioData';
 import LinksSection from './components/LinksSection';
 import GallerySection from './components/GallerySection';
@@ -32,6 +15,9 @@ import TemplateSelector from './components/TemplateSelector';
 import StatsCard from './components/StatsCard';
 import PreviewCard from './components/PreviewCard';
 import LoadingSkeleton from './components/LoadingSkeleton';
+import DisplaySettingsModal from './components/DisplaySettingsModal';
+import MobileSidebar from './components/MobileSidebar';
+import { DisplaySettings, defaultSettings } from '@/lib/settings';
 
 interface PortalData {
   id: string;
@@ -65,18 +51,12 @@ export default function StudioPage() {
     deleteLink,
     updateProduct,
     deleteProduct,
-    fetchLinks,
-    fetchProducts,
-    setLoading
   } = useStudioData();
-
-
-// Add state
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   const [portal, setPortal] = useState<PortalData | null>(null);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState<'links' | 'products' | 'appearance'>('links');
 
   // Modal states
@@ -84,6 +64,7 @@ export default function StudioPage() {
   const [showAddProduct, setShowAddProduct] = useState(false);
   const [showProfileSettings, setShowProfileSettings] = useState(false);
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [showDisplaySettings, setShowDisplaySettings] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
 
   // Form states for appearance
@@ -98,17 +79,37 @@ export default function StudioPage() {
   const [savingAppearance, setSavingAppearance] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-// Add effect to detect mobile
-useEffect(() => {
-  const checkMobile = () => {
-    setIsMobile(window.innerWidth < 1024);
+  // Display settings
+  const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(defaultSettings);
+
+  // Detect mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Load display settings from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('studio_display_settings');
+    if (saved) {
+      try {
+        setDisplaySettings(JSON.parse(saved));
+      } catch (e) {
+        console.error('Failed to load display settings');
+      }
+    }
+  }, []);
+
+  // Save display settings
+  const saveDisplaySettings = (settings: DisplaySettings) => {
+    setDisplaySettings(settings);
+    localStorage.setItem('studio_display_settings', JSON.stringify(settings));
+    setShowDisplaySettings(false);
   };
-  checkMobile();
-  window.addEventListener('resize', checkMobile);
-  return () => window.removeEventListener('resize', checkMobile);
-}, []);
-
-
 
   // Fetch portal info on mount
   useEffect(() => {
@@ -125,7 +126,6 @@ useEffect(() => {
       const data = await res.json();
       setPortal(data);
 
-      // Initialize appearance form with portal data
       if (data) {
         setTemplateId(data.templateId || 'template1');
         setPrimaryColor(data.primaryColor || '#f5f5f5');
@@ -219,49 +219,32 @@ useEffect(() => {
       setUploadingImage(false);
     }
   };
-const handleLogout = async () => {
-  try {
-    // Clear cookies and local storage
+
+  const handleLogout = async () => {
     document.cookie.split(";").forEach(function(c) {
       document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
     localStorage.clear();
     sessionStorage.clear();
+    await fetch('/api/logout', { method: 'POST' });
+    router.push('/login');
+  };
 
-    // Call logout API
-    await fetch('/api/logout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    // Redirect to login
-    window.location.href = '/login';
-  } catch (error) {
-    console.error('Logout error:', error);
-    window.location.href = '/login';
-  }
-};
-
-
-   const textColorStyle = { color: textColor };
+  const textColorStyle = { color: textColor };
 
   if (loading) {
     return <LoadingSkeleton />;
   }
 
-  const realProducts = products.filter(p => !p.isDummy);
+  const realProducts = products.filter((p: any) => !p.isDummy);
   const hasProducts = realProducts.length > 0;
   const canAddMoreProducts = portal?.isPremium ? realProducts.length < 50 : realProducts.length < 4;
   const canAddMoreLinks = portal?.isPremium ? links.length < 10 : links.length < 1;
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-    {isMobile && (
-      <>
-        {/* Mobile Sidebar */}
+      {/* Mobile Sidebar */}
+      {isMobile && (
         <MobileSidebar
           isOpen={isMobileSidebarOpen}
           onClose={() => setIsMobileSidebarOpen(false)}
@@ -274,16 +257,11 @@ const handleLogout = async () => {
           onProfileSettings={() => setShowProfileSettings(true)}
           onLogout={handleLogout}
         />
-      </>
-    )}
+      )}
 
       <div className="flex min-h-screen">
-        {/* Sidebar - Desktop & Mobile */}
-        <div className={`
-          fixed lg:static inset-y-0 left-0 z-40
-          w-64 bg-white border-r transform transition-transform duration-300
-          ${showMobileMenu ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        `}>
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block w-64 bg-white border-r fixed h-full overflow-y-auto">
           <div className="p-6">
             <div className="mb-8">
               <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
@@ -294,7 +272,7 @@ const handleLogout = async () => {
 
             <nav className="space-y-2">
               <button
-                onClick={() => { setActiveTab('links'); setShowMobileMenu(false); }}
+                onClick={() => setActiveTab('links')}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition ${
                   activeTab === 'links' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
@@ -309,7 +287,7 @@ const handleLogout = async () => {
               </button>
 
               <button
-                onClick={() => { setActiveTab('products'); setShowMobileMenu(false); }}
+                onClick={() => setActiveTab('products')}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition ${
                   activeTab === 'products' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
@@ -324,7 +302,7 @@ const handleLogout = async () => {
               </button>
 
               <button
-                onClick={() => { setActiveTab('appearance'); setShowMobileMenu(false); }}
+                onClick={() => setActiveTab('appearance')}
                 className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition ${
                   activeTab === 'appearance' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
                 }`}
@@ -355,8 +333,8 @@ const handleLogout = async () => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-0">
-          <div className="max-w-4xl mx-auto px-4 py-8 lg:px-8">
+        <div className="flex-1 lg:ml-64">
+          <div className="max-w-7xl mx-auto px-4 py-8 lg:px-8">
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -383,14 +361,13 @@ const handleLogout = async () => {
 
                 {portal?.isPremium && (
                   <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full">
-                    <Crown className="w-4 h-4 text-white" />
                     <span className="text-xs font-semibold text-white">Premium</span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Stats Cards - Show on all tabs */}
+            {/* Stats Cards */}
             <StatsCard
               linksCount={links.length}
               productsCount={realProducts.length}
@@ -425,8 +402,10 @@ const handleLogout = async () => {
                 <GallerySection
                   products={products}
                   onAdd={() => setShowAddProduct(true)}
-                  onEdit={(product) => setEditingProduct(product)}  // Add this line
+                  onEdit={(product) => setEditingProduct(product)}
                   onDelete={deleteProduct}
+                  onOpenSettings={() => setShowDisplaySettings(true)}
+                  settings={displaySettings}
                   textColorStyle={textColorStyle}
                 />
 
@@ -437,7 +416,7 @@ const handleLogout = async () => {
                       Pro Tip
                     </h3>
                     <p className="text-sm text-blue-800">
-                      Click on any product to edit its details. Products with images look best when using square (1:1) aspect ratio.
+                      Click on any product to edit its details. Use the settings button to customize how products are displayed.
                     </p>
                   </div>
                 )}
@@ -588,9 +567,8 @@ const handleLogout = async () => {
                               }}
                               className="hidden"
                             />
-                            <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                            <Upload className="w-8 h-8 text-gray-400 mb-2" />
                             <p className="text-sm text-gray-500">Click to upload background image</p>
-                            <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
                           </label>
                         )}
                         {uploadingImage && (
@@ -616,30 +594,6 @@ const handleLogout = async () => {
                     <option value="font-serif">Serif</option>
                     <option value="font-mono">Monospace</option>
                   </select>
-                </div>
-
-                {/* Live Preview */}
-                <div className="bg-gray-100 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Live Preview</h3>
-                  <div
-                    className="rounded-lg p-6 text-center transition-all"
-                    style={{
-                      backgroundColor: backgroundType === 'color' ? primaryColor : undefined,
-                      background: backgroundType === 'gradient' ? `linear-gradient(135deg, ${gradientStart}, ${gradientEnd})` : undefined,
-                      backgroundImage: backgroundType === 'image' && backgroundImage ? `url(${backgroundImage})` : undefined,
-                      backgroundSize: 'cover',
-                      backgroundPosition: 'center',
-                      color: textColor
-                    }}
-                  >
-                    <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                      <div className="w-16 h-16 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xl mb-2">
-                        {portal?.displayName?.charAt(0).toUpperCase() || '👤'}
-                      </div>
-                      <p className="font-semibold">{portal?.displayName || portal?.title || 'Your Name'}</p>
-                      <p className="text-sm opacity-80 mt-1">This is how your page will look</p>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Save Button */}
@@ -689,27 +643,18 @@ const handleLogout = async () => {
         />
       )}
 
-
-        {editingProduct && (
-          <EditProductModal
-            product={editingProduct}
-            onClose={() => setEditingProduct(null)}
-            onSave={async (id, updates) => {
-              const success = await updateProduct(id, updates);
-              if (success) {
-                setEditingProduct(null);
-              }
-              return success;
-            }}
-            onDelete={async (id) => {
-              const success = await deleteProduct(id);
-              if (success) {
-                setEditingProduct(null);
-              }
-              return success;
-            }}
-          />
-        )}
+      {editingProduct && (
+        <EditProductModal
+          product={editingProduct}
+          onClose={() => setEditingProduct(null)}
+          onSave={updateProduct}
+          onDelete={async (id) => {
+            const success = await deleteProduct(id);
+            if (success) setEditingProduct(null);
+            return success;
+          }}
+        />
+      )}
 
       {showProfileSettings && portal && (
         <ProfileSettingsModal
@@ -728,6 +673,14 @@ const handleLogout = async () => {
             setShowTemplateSelector(false);
           }}
           onClose={() => setShowTemplateSelector(false)}
+        />
+      )}
+
+      {showDisplaySettings && (
+        <DisplaySettingsModal
+          settings={displaySettings}
+          onSave={saveDisplaySettings}
+          onClose={() => setShowDisplaySettings(false)}
         />
       )}
     </div>
