@@ -7,10 +7,9 @@ interface PreviewCardProps {
   portalSlug: string;
   customUsername?: string;
   isPremium?: boolean;
-  textColorStyle?: React.CSSProperties;
 }
 
-export default function PreviewCard({ portalSlug, customUsername, isPremium, textColorStyle }: PreviewCardProps) {
+export default function PreviewCard({ portalSlug, customUsername, isPremium }: PreviewCardProps) {
   const getPublicUrl = () => {
     if (typeof window === 'undefined') return '';
     const baseUrl = window.location.origin;
@@ -24,16 +23,19 @@ export default function PreviewCard({ portalSlug, customUsername, isPremium, tex
   const slugUrl = typeof window !== 'undefined' ? `${window.location.origin}/view?slug=${portalSlug}` : '';
 
   return (
-    <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white mb-6">
+    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-6 border border-white/20">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm opacity-90">Your public page</p>
-          <p className="font-mono text-xs mt-1 break-all">{publicUrl}</p>
+          <p className="text-sm opacity-90" style={{ color: 'inherit' }}>Your public page</p>
+          <p className="font-mono text-xs mt-1 break-all opacity-70">{publicUrl}</p>
           {isPremium && customUsername && customUsername !== portalSlug && (
-            <p className="text-xs opacity-60 mt-1">Old URL: {slugUrl}</p>
+            <p className="text-xs opacity-50 mt-1">Old URL: {slugUrl}</p>
           )}
         </div>
-        <button onClick={() => window.open(publicUrl, '_blank')} className="bg-white/20 px-3 py-1 rounded-full text-sm flex items-center gap-1 hover:bg-white/30 transition">
+        <button
+          onClick={() => window.open(publicUrl, '_blank')}
+          className="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-sm flex items-center gap-1 transition"
+        >
           <Eye className="w-4 h-4" /> Preview
         </button>
       </div>

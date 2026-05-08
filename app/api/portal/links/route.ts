@@ -7,32 +7,32 @@ const prisma = new PrismaClient();
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const userId = await verifyToken(token);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { portal: true }
     });
-    
+
     if (!user || !user.portal) {
       return NextResponse.json({ links: [] });
     }
-    
+
     const links = await prisma.link.findMany({
       where: { portalId: user.portal.id },
       orderBy: { order: 'asc' }
     });
-    
+
     return NextResponse.json({ links });
-    
+
   } catch (error) {
     console.error('Links API error:', error);
     return NextResponse.json({ links: [] });
@@ -41,29 +41,29 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const userId = await verifyToken(token);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { portal: true }
     });
-    
+
     if (!user || !user.portal) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
-    
+
     const { title, url, order, iconUrl, platform } = await request.json();
-    
+
     console.log('Creating link:', { title, url, iconUrl, platform });
-    
+
     const link = await prisma.link.create({
       data: {
         title,
@@ -74,37 +74,74 @@ export async function POST(request: NextRequest) {
         // You can add a platform field if needed
       }
     });
-    
+
     return NextResponse.json({ link });
-    
+
   } catch (error) {
     console.error('Create link error:', error);
     return NextResponse.json({ error: 'Failed to create link: ' + (error as Error).message }, { status: 500 });
   }
 }
-export async function DELETE(request: NextRequest) {
+// app/api/portal/links/route.ts - Add PUT method
+export async function PUT(request: NextRequest) {
   try {
     const token = request.cookies.get('token')?.value;
-    
+
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
     const userId = await verifyToken(token);
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { portal: true }
+    });
+
+    if (!user || !user.portal) {
+      return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
+    }
+
+    const { id, title, url } = await request.json();
+
+    const updatedLink = await prisma.link.update({
+      where: { id, portalId: user.portal.id },
+      data: { title, url }
+    });
+
+    return NextResponse.json({ success: true, link: updatedLink });
+
+  } catch (error) {
+    console.error('Update link error:', error);
+    return NextResponse.json({ error: 'Failed to update link' }, { status: 500 });
+  }
+}
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = request.cookies.get('token')?.value;
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = await verifyToken(token);
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
     }
-    
+
     await prisma.link.delete({ where: { id } });
     return NextResponse.json({ success: true });
-    
+
   } catch (error) {
     console.error('Delete link error:', error);
     return NextResponse.json({ error: 'Failed to delete link' }, { status: 500 });

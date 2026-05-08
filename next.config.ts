@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
 
   // Configure images to allow external domains
   images: {
-    // Allow all external domains (for development)
     remotePatterns: [
       {
         protocol: 'https',
@@ -20,7 +19,6 @@ const nextConfig: NextConfig = {
         hostname: '**',
       },
     ],
-    // Allow local images
     localPatterns: [
       {
         pathname: '/images/**',
@@ -33,16 +31,19 @@ const nextConfig: NextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'],
     dangerouslyAllowSVG: true,
-    // Disable the image optimization for external URLs
-    unoptimized: true,
   },
 
   compress: true,
   reactStrictMode: true,
 
+  // Remove swcMinify - it's not valid in Next.js 16
+
   experimental: {
     optimizePackageImports: ['lucide-react', 'next-cloudinary'],
   },
 };
+
+// Add allowedDevOrigins for network access
+export const allowedDevOrigins = ['192.168.1.26'];
 
 export default nextConfig;

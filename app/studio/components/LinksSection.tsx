@@ -35,32 +35,31 @@ export default function LinksSection({
           disabled={isAddDisabled || remainingSlots === 0}
           className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 transition ${
             isAddDisabled || remainingSlots === 0
-              ? 'bg-gray-300 cursor-not-allowed'
-              : 'bg-black text-white hover:bg-gray-800'
+              ? 'bg-gray-500/50 cursor-not-allowed'
+              : 'bg-black/80 backdrop-blur-sm hover:bg-black text-white'
           }`}
-          title={remainingSlots === 0 ? `Maximum ${limit} links reached` : 'Add new link'}
         >
           <Plus className="w-4 h-4" /> Add link
         </button>
       </div>
 
       {links.length === 0 ? (
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
+        <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 text-center border border-white/20">
           <Link2 className="w-12 h-12 mx-auto mb-2 opacity-50" style={textColorStyle} />
           <p className="opacity-70" style={textColorStyle}>No links yet</p>
           <button
             onClick={onAdd}
-            className="mt-3 text-black underline text-sm hover:no-underline"
+            className="mt-3 text-white underline text-sm hover:no-underline"
           >
             Add your first link
           </button>
         </div>
       ) : (
         <div className="space-y-2">
-          {links.map((link, index) => (
+          {links.map((link) => (
             <div
               key={link.id}
-              className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center gap-3 hover:bg-white/20 transition group"
+              className="bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-sm flex items-center gap-3 hover:bg-white/20 transition group border border-white/20"
             >
               {link.imageUrl && (
                 <img
@@ -88,7 +87,7 @@ export default function LinksSection({
                   {link.url}
                 </p>
                 {link.clicks > 0 && (
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-green-400 mt-1">
                     📊 {link.clicks} click{link.clicks !== 1 ? 's' : ''}
                   </p>
                 )}
@@ -97,7 +96,7 @@ export default function LinksSection({
                 onClick={() => onDelete(link.id)}
                 className="p-2 rounded-full opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all"
               >
-                <Trash2 className="w-4 h-4 text-red-500" />
+                <Trash2 className="w-4 h-4 text-red-400" />
               </button>
             </div>
           ))}

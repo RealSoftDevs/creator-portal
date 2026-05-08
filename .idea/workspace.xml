@@ -5,7 +5,30 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="16c32d87-c3d0-486e-a843-119911e5d2e9" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/app/components/shared/EditLinkModal.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/dashboard/Sidebar.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/profile/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/auth/register/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/auth/register/route.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/portal/links/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/links/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/dashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/globals.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/hooks/useAuth.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/hooks/useAuth.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/hooks/useBackButton.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/hooks/useBackButton.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/GallerySection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/GallerySection.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/LinksSection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/LinksSection.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/PreviewCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/PreviewCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/ProfileSettingsModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/ProfileSettingsModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/StatsCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/StatsCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/view/[username]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/view/[username]/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/filelist.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/defaults.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/defaults.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/settings.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/settings.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/next.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -48,6 +71,7 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\Creator_OS\upload\app\components" />
       <recent name="D:\Creator_OS\upload" />
       <recent name="D:\Creator_OS\upload\app" />
       <recent name="D:\Creator_OS\upload\public\images" />

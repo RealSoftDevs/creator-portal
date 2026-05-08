@@ -12,6 +12,18 @@ export const defaultConfig = {
   defaultBackground: '#f5f5f5',
   defaultTextColor: '#1a1a1a',
 
+  // Admin defaults (dark theme)
+  adminTemplateId: 'template2',
+  adminPrimaryColor: '#1a1a1a',
+  adminTextColor: '#ffffff',
+  adminFontFamily: 'font-sans',
+  adminBackgroundType: 'gradient',
+  adminGradientStart: '#1a1a1a',
+  adminGradientEnd: '#2d2d2d',
+  adminBackgroundImage: '',
+  adminDefaultBackground: '#1a1a1a',
+  adminDefaultTextColor: '#ffffff',
+
   // Portal defaults
   title: 'My Creator Portal',
   bio: '',
@@ -43,5 +55,22 @@ export const defaultTemplate = {
   gradientColors: {
     start: defaultConfig.gradientStart,
     end: defaultConfig.gradientEnd
+  }
+};
+
+export const defaultAdminTemplate = {
+  id: defaultConfig.adminTemplateId,
+  name: 'Dark Elegance',
+  description: 'Sleek dark theme for admin',
+  isPremium: false,
+  gradient: defaultConfig.gradients.template2,
+  textColor: 'text-white',
+  defaultBackground: defaultConfig.adminPrimaryColor,
+  defaultTextColor: defaultConfig.adminTextColor,
+  previewBadge: 'Admin',
+  category: 'Dark',
+  gradientColors: {
+    start: defaultConfig.adminGradientStart,
+    end: defaultConfig.adminGradientEnd
   }
 };

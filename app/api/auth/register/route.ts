@@ -42,6 +42,7 @@ export async function POST(request: Request) {
         portal: {
           create: {
             slug: slug,
+            // Public settings
             templateId: defaultConfig.templateId,
             primaryColor: defaultConfig.primaryColor,
             backgroundType: defaultConfig.backgroundType,
@@ -50,24 +51,15 @@ export async function POST(request: Request) {
             gradientEnd: defaultConfig.gradientEnd,
             textColor: defaultConfig.textColor,
             fontFamily: defaultConfig.fontFamily,
-            // Set admin fields as well
-            adminTemplateId: defaultConfig.templateId,
-            adminPrimaryColor: defaultConfig.primaryColor,
-            adminBackgroundType: defaultConfig.backgroundType,
-            adminBackgroundImage: defaultConfig.backgroundImage,
-            adminGradientStart: defaultConfig.gradientStart,
-            adminGradientEnd: defaultConfig.gradientEnd,
-            adminTextColor: defaultConfig.textColor,
-            adminFontFamily: defaultConfig.fontFamily,
-            // Set public fields as well
-            publicTemplateId: defaultConfig.templateId,
-            publicPrimaryColor: defaultConfig.primaryColor,
-            publicBackgroundType: defaultConfig.backgroundType,
-            publicBackgroundImage: defaultConfig.backgroundImage,
-            publicGradientStart: defaultConfig.gradientStart,
-            publicGradientEnd: defaultConfig.gradientEnd,
-            publicTextColor: defaultConfig.textColor,
-            publicFontFamily: defaultConfig.fontFamily,
+            // Admin settings (dark theme)
+            adminTemplateId: defaultConfig.adminTemplateId,
+            adminPrimaryColor: defaultConfig.adminPrimaryColor,
+            adminBackgroundType: defaultConfig.adminBackgroundType,
+            adminGradientStart: defaultConfig.adminGradientStart,
+            adminGradientEnd: defaultConfig.adminGradientEnd,
+            adminBackgroundImage: defaultConfig.adminBackgroundImage,
+            adminTextColor: defaultConfig.adminTextColor,
+            adminFontFamily: defaultConfig.adminFontFamily,
           }
         }
       },

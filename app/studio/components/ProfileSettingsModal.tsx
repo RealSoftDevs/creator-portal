@@ -94,10 +94,10 @@ export default function ProfileSettingsModal({ portal, onClose, onSave }: Profil
     onClose();
   };
 
-  const getInitialName = () => {
-    const name = displayName || title || portal.userName || 'User';
-    return name.charAt(0).toUpperCase();
-  };
+const getInitialName = () => {
+  const name = displayName || title || portal.userName || 'User';
+  return name.charAt(0).toUpperCase();
+};
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center overflow-y-auto">
