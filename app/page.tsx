@@ -502,9 +502,7 @@ const updateProduct = async (id: string, updates: any) => {
                 onAddProduct={() => setShowAddProduct(true)}
                 onEditProduct={setEditingProduct}
                 onDeleteProduct={deleteProduct}
-                onOpenSettings={() => setShowDisplaySettings(true)}
                 onUpdateSettings={saveAdminDisplaySettings}
-
             />
           )}
 

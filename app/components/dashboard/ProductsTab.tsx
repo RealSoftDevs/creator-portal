@@ -1,4 +1,4 @@
-// app/components/dashboard/ProductsTab.tsx
+// app/components/dashboard/ProductsTab.tsx - Update the interface
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -23,7 +23,7 @@ export default function ProductsTab({
   onUpdateSettings
 }: ProductsTabProps) {
   const [filter, setFilter] = useState<string>('all');
-  const [showFilterBar, setShowFilterBar] = useState(true);
+  const [showFilterBar, setShowFilterBar] = useState(false);
   const [showPerRowDropdown, setShowPerRowDropdown] = useState(false);
 
   // Get unique categories from products
@@ -78,14 +78,6 @@ export default function ProductsTab({
       all: 'All Products'
     };
     return names[catId] || catId;
-  };
-
-  // Toggle view style
-  const toggleViewStyle = () => {
-    onUpdateSettings({
-      ...settings,
-      cardStyle: settings.cardStyle === 'grid' ? 'list' : 'grid'
-    });
   };
 
   const perRowOptions = [2, 3, 4, 5, 6];

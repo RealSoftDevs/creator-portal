@@ -4,14 +4,7 @@
     <option name="autoReloadType" value="NONE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="16c32d87-c3d0-486e-a843-119911e5d2e9" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/dashboard/ProductsTab.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/dashboard/ProductsTab.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/shared/DisplaySettingsModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/shared/DisplaySettingsModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/shared/EditProductModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/shared/EditProductModal.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/view/[username]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/view/[username]/page.tsx" afterDir="false" />
-    </list>
+    <list default="true" id="16c32d87-c3d0-486e-a843-119911e5d2e9" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
