@@ -1,8 +1,33 @@
+// app/studio/hooks/useStudioData.ts
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Product, Link } from '@/lib/types';
 
+interface Product {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl: string;
+  buyLink: string;
+  price?: string | null;
+  platform?: string;
+  category?: string;
+  isDummy?: boolean;
+  order?: number;
+  createdAt?: string;
+}
 
+interface Link {
+  id: string;
+  title: string;
+  url: string;
+  order: number;
+  clicks: number;
+  imageUrl?: string;
+  wrappedUrl?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export function useStudioData() {
   const [links, setLinks] = useState<Link[]>([]);
@@ -41,7 +66,13 @@ export function useStudioData() {
     try {
       const res = await fetch('/api/portal/products');
       const data = await res.json();
-      setProducts(data.products || []);
+      // Ensure price is properly handled
+      const productsWithTypedPrice = (data.products || []).map((p: any) => ({
+        ...p,
+        price: p.price || null,
+        category: p.category || 'misc'
+      }));
+      setProducts(productsWithTypedPrice);
     } catch (error) {
       console.error('Failed to fetch products:', error);
     }
@@ -69,7 +100,11 @@ export function useStudioData() {
     const res = await fetch('/api/portal/products', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(product)
+      body: JSON.stringify({
+        ...product,
+        price: product.price || null,
+        category: product.category || 'misc'
+      })
     });
     if (res.ok) {
       await fetchProducts();
@@ -84,44 +119,45 @@ export function useStudioData() {
     await fetchLinks();
     return true;
   };
+ // In app/studio/hooks/useStudioData.ts, ensure these functions return boolean:
 
-  const updateProduct = async (id: string, updates: any) => {
-      try {
-        const res = await fetch(`/api/portal/products/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updates)
-        });
-        if (res.ok) {
-          await fetchProducts();
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error('Update product error:', error);
-        return false;
-      }
-    };
+ const updateProduct = async (id: string, updates: any): Promise<boolean> => {
+   try {
+     const res = await fetch(`/api/portal/products/${id}`, {
+       method: 'PUT',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({
+         ...updates,
+         price: updates.price || null,
+         category: updates.category || 'misc'
+       })
+     });
+     if (res.ok) {
+       await fetchProducts();
+       return true;
+     }
+     return false;
+   } catch (error) {
+     console.error('Update product error:', error);
+     return false;
+   }
+ };
 
-
-    // Also add deleteProduct if not already there
-    const deleteProduct = async (id: string) => {
-      try {
-        const res = await fetch(`/api/portal/products/${id}`, {
-          method: 'DELETE',
-        });
-        if (res.ok) {
-          await fetchProducts();
-          return true;
-        }
-        return false;
-      } catch (error) {
-        console.error('Delete product error:', error);
-        return false;
-      }
-    };
-
-
+ const deleteProduct = async (id: string): Promise<boolean> => {
+   try {
+     const res = await fetch(`/api/portal/products/${id}`, {
+       method: 'DELETE',
+     });
+     if (res.ok) {
+       await fetchProducts();
+       return true;
+     }
+     return false;
+   } catch (error) {
+     console.error('Delete product error:', error);
+     return false;
+   }
+ };
   const loadData = async () => {
     await fetchPortalInfo();
     await fetchLinks();

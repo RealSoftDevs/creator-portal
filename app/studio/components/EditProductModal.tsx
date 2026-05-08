@@ -2,8 +2,9 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { X, Upload, Loader2, ExternalLink, Trash2 } from 'lucide-react';
+import { X, Upload, Loader2, ExternalLink, Trash2, Tag, Check, RefreshCw } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { PRODUCT_CATEGORIES, getCategoryById } from '@/lib/categories';
 
 interface EditProductModalProps {
   product: {
@@ -12,11 +13,12 @@ interface EditProductModalProps {
     description?: string;
     imageUrl: string;
     buyLink: string;
-    price?: string;
+    price?: string | null;
     platform: string;
+    category?: string;
   };
   onClose: () => void;
-  onSave: (id: string, updates: any) => Promise<void>;
+  onSave: (id: string, updates: any) => Promise<boolean>;
   onDelete: (id: string) => Promise<boolean>;
 }
 
@@ -27,10 +29,44 @@ export default function EditProductModal({ product, onClose, onSave, onDelete }:
   const [buyLink, setBuyLink] = useState(product.buyLink);
   const [price, setPrice] = useState(product.price || '');
   const [platform, setPlatform] = useState(product.platform);
+  const [category, setCategory] = useState(product.category || 'misc');
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showCategorySelect, setShowCategorySelect] = useState(false);
+
+  // Fetch product details from API
+  const fetchProductDetails = async () => {
+    if (!buyLink) {
+      alert('Please enter a product link first');
+      return;
+    }
+
+    setFetching(true);
+    try {
+      const res = await fetch(`/api/product-preview?url=${encodeURIComponent(buyLink)}`);
+      const data = await res.json();
+
+      if (data) {
+        if (data.title) setTitle(data.title);
+        if (data.description) setDescription(data.description);
+        if (data.price) setPrice(data.price);
+        if (data.imageUrl) setImageUrl(data.imageUrl);
+        if (data.platform) setPlatform(data.platform);
+
+        alert('Product details fetched successfully!');
+      } else {
+        alert('Could not fetch product details');
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      alert('Failed to fetch product details');
+    } finally {
+      setFetching(false);
+    }
+  };
 
   // Handle file upload
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -91,9 +127,13 @@ export default function EditProductModal({ product, onClose, onSave, onDelete }:
     }
 
     setLoading(true);
-    await onSave(product.id, { title, description, imageUrl, buyLink, price, platform });
+    const success = await onSave(product.id, { title, description, imageUrl, buyLink, price, platform, category });
     setLoading(false);
-    onClose();
+    if (success) {
+      onClose();
+    } else {
+      alert('Failed to save product');
+    }
   };
 
   const handleDelete = async () => {
@@ -114,6 +154,16 @@ export default function EditProductModal({ product, onClose, onSave, onDelete }:
     }
   };
 
+  const getCategoryIcon = (catId: string) => {
+    const cat = getCategoryById(catId);
+    return cat?.icon || '📦';
+  };
+
+  const getCategoryName = (catId: string) => {
+    const cat = getCategoryById(catId);
+    return cat?.name || 'Miscellaneous';
+  };
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center overflow-y-auto">
       <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto">
@@ -125,17 +175,83 @@ export default function EditProductModal({ product, onClose, onSave, onDelete }:
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
-          {/* Product Link Input */}
+          {/* Product Link Input with Fetch Button */}
           <div>
             <label className="block text-sm font-medium mb-1">Product Link *</label>
-            <input
-              type="url"
-              value={buyLink}
-              onChange={(e) => setBuyLink(e.target.value)}
-              placeholder="https://amazon.in/dp/..."
-              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={buyLink}
+                onChange={(e) => setBuyLink(e.target.value)}
+                placeholder="https://amazon.in/dp/..."
+                className="flex-1 px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
+                required
+              />
+              <button
+                type="button"
+                onClick={fetchProductDetails}
+                disabled={fetching}
+                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition disabled:opacity-50 flex items-center gap-2"
+              >
+                {fetching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Fetching...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Fetch
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              Click "Fetch" to auto-fill product details from the link
+            </p>
+          </div>
+
+          {/* Category Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Category *
+            </label>
+            <button
+              type="button"
+              onClick={() => setShowCategorySelect(!showCategorySelect)}
+              className="w-full px-4 py-3 border rounded-xl text-left flex items-center justify-between hover:border-gray-400 transition bg-white"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{getCategoryIcon(category)}</span>
+                <span>{getCategoryName(category)}</span>
+              </div>
+              <span className="text-gray-400">▼</span>
+            </button>
+
+            {showCategorySelect && (
+              <div className="mt-2 border rounded-xl overflow-hidden bg-white shadow-lg max-h-64 overflow-y-auto">
+                {PRODUCT_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setCategory(cat.id);
+                      setShowCategorySelect(false);
+                    }}
+                    className={`w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 transition ${
+                      category === cat.id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                    }`}
+                  >
+                    <span className="text-xl">{cat.icon}</span>
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{cat.name}</p>
+                    </div>
+                    {category === cat.id && <Check className="w-4 h-4 text-purple-500" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Image Section */}
@@ -217,7 +333,7 @@ export default function EditProductModal({ product, onClose, onSave, onDelete }:
                 type="text"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                placeholder="$49.99"
+                placeholder="₹49,999"
                 className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
               />
             </div>
@@ -250,14 +366,11 @@ export default function EditProductModal({ product, onClose, onSave, onDelete }:
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-1">{title}</p>
                   {price && <p className="text-xs text-green-600">{price}</p>}
-                  <a
-                    href={buyLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
-                  >
-                    View on {platform} <ExternalLink className="w-3 h-3" />
-                  </a>
+                  {description && <p className="text-xs text-gray-500 line-clamp-1">{description}</p>}
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="text-xs">{getCategoryIcon(category)}</span>
+                    <span className="text-xs text-gray-500">{getCategoryName(category)}</span>
+                  </div>
                 </div>
               </div>
             </div>

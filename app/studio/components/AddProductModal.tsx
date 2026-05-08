@@ -2,8 +2,9 @@
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { X, Upload, Loader2, Globe, Edit2, Check, ExternalLink, RefreshCw, Image as ImageIcon, Link as LinkIcon, Camera, Download, Shield } from 'lucide-react';
+import { X, Upload, Loader2, Tag, Check, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
+import { PRODUCT_CATEGORIES, detectCategoryFromUrl, getCategoryById } from '@/lib/categories';
 
 interface ProductPreview {
   title: string;
@@ -21,6 +22,44 @@ interface AddProductModalProps {
 
 type ImageSourceType = 'upload' | 'url' | 'auto';
 
+// Platform detection function
+const detectPlatformFromUrl = (url: string): string => {
+  const urlLower = url.toLowerCase();
+
+  if (urlLower.includes('amazon') || urlLower.includes('amzn')) {
+    return 'amazon';
+  }
+  if (urlLower.includes('myntra')) {
+    return 'myntra';
+  }
+  if (urlLower.includes('flipkart')) {
+    return 'flipkart';
+  }
+  if (urlLower.includes('etsy')) {
+    return 'etsy';
+  }
+  if (urlLower.includes('shopify')) {
+    return 'shopify';
+  }
+  if (urlLower.includes('walmart')) {
+    return 'walmart';
+  }
+  if (urlLower.includes('bestbuy')) {
+    return 'bestbuy';
+  }
+  if (urlLower.includes('target')) {
+    return 'target';
+  }
+  if (urlLower.includes('aliexpress')) {
+    return 'aliexpress';
+  }
+  if (urlLower.includes('ebay')) {
+    return 'ebay';
+  }
+
+  return 'custom';
+};
+
 export default function AddProductModal({ onClose, onSave }: AddProductModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -28,6 +67,7 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
   const [buyLink, setBuyLink] = useState('');
   const [price, setPrice] = useState('');
   const [platform, setPlatform] = useState('custom');
+  const [category, setCategory] = useState('misc');
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isFetching, setIsFetching] = useState(false);
@@ -36,6 +76,9 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
   const [imageSource, setImageSource] = useState<ImageSourceType>('auto');
   const [manualImageUrl, setManualImageUrl] = useState('');
   const [showManualImageInput, setShowManualImageInput] = useState(false);
+  const [showCategorySelect, setShowCategorySelect] = useState(false);
+  const [detectedCategory, setDetectedCategory] = useState<string | null>(null);
+  const [detectedPlatform, setDetectedPlatform] = useState<string | null>(null);
 
   const debounceTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -45,14 +88,20 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     { name: 'CORS Proxy', url: 'https://cors-anywhere.herokuapp.com/' },
   ];
 
-  // Main fetch function - tries everything automatically
+  // Main fetch function
   const fetchEverything = useCallback(async (url: string) => {
     setIsFetching(true);
     setFetchStatus({ image: 'fetching', details: 'fetching' });
 
+    // Auto-detect platform from URL
+    const detectedPlatformFromUrl = detectPlatformFromUrl(url);
+    if (detectedPlatformFromUrl !== 'custom') {
+      setPlatform(detectedPlatformFromUrl);
+      setDetectedPlatform(detectedPlatformFromUrl);
+    }
+
     let result = { title: '', description: '', price: '', imageUrl: '' };
 
-    // Try multiple methods in parallel
     const fetchPromises = [
       fetchViaApi(url),
       fetchViaProxy(url),
@@ -60,7 +109,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
 
     const results = await Promise.allSettled(fetchPromises);
 
-    // Combine results from all methods
     for (const res of results) {
       if (res.status === 'fulfilled' && res.value) {
         result = {
@@ -72,7 +120,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
       }
     }
 
-    // Update state with fetched data
     if (result.title && !title) setTitle(result.title);
     if (result.description && !description) setDescription(result.description);
     if (result.price && !price) setPrice(result.price);
@@ -83,11 +130,17 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
       setFetchStatus(prev => ({ ...prev, image: 'failed' }));
     }
 
+    // Auto-detect category
+    const detectedCat = detectCategoryFromUrl(url, result.title);
+    if (detectedCat !== 'misc') {
+      setCategory(detectedCat);
+      setDetectedCategory(detectedCat);
+    }
+
     setFetchStatus(prev => ({ ...prev, details: result.title ? 'success' : 'failed' }));
     setIsFetching(false);
   }, [title, description, price, imageUrl]);
 
-  // Method 1: Fetch via your API
   const fetchViaApi = async (url: string): Promise<Partial<ProductPreview>> => {
     try {
       const res = await fetch(`/api/product-preview?url=${encodeURIComponent(url)}`);
@@ -104,7 +157,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     }
   };
 
-  // Method 2: Fetch via proxy (for images and data)
   const fetchViaProxy = async (url: string): Promise<Partial<ProductPreview>> => {
     for (const proxy of proxyServices) {
       try {
@@ -114,7 +166,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
         if (response.ok) {
           const html = await response.text();
 
-          // Extract title
           let title = '';
           const titleMatch = html.match(/<title>([^<]*)<\/title>/);
           if (titleMatch) {
@@ -126,7 +177,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
             if (title.length > 120) title = title.substring(0, 117) + '...';
           }
 
-          // Extract description
           let description = '';
           const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
           if (descMatch) {
@@ -134,7 +184,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
             if (description.length > 500) description = description.substring(0, 497) + '...';
           }
 
-          // Extract image URL
           let imageUrl = '';
           const imagePatterns = [
             /"hiRes":"([^"]+)"/,
@@ -152,7 +201,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
             }
           }
 
-          // Extract price
           let price = '';
           const priceMatch = html.match(/<span class="a-price-whole">([^<]+)<\/span>/);
           if (priceMatch) {
@@ -170,7 +218,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     return {};
   };
 
-  // Auto-fetch when link is pasted (debounced)
   useEffect(() => {
     if (!buyLink || !buyLink.startsWith('http')) {
       return;
@@ -191,7 +238,16 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     };
   }, [buyLink, fetchEverything]);
 
-  // Handle file upload
+  useEffect(() => {
+    if (title || buyLink) {
+      const detected = detectCategoryFromUrl(buyLink, title);
+      setDetectedCategory(detected);
+      if (category === 'misc' && detected !== 'misc') {
+        setCategory(detected);
+      }
+    }
+  }, [title, buyLink]);
+
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
     if (!file) return;
@@ -260,7 +316,7 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     }
 
     setLoading(true);
-    await onSave({ title, description, imageUrl, buyLink, price, platform });
+    await onSave({ title, description, imageUrl, buyLink, price, platform, category });
     setLoading(false);
     onClose();
   };
@@ -271,10 +327,103 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
     }
   };
 
+  const getCategoryIcon = (catId: string) => {
+    const cat = getCategoryById(catId);
+    return cat?.icon || '📦';
+  };
+
+  const getCategoryName = (catId: string) => {
+    const cat = getCategoryById(catId);
+    return cat?.name || 'Miscellaneous';
+  };
+
+  const getPlatformDisplayName = (platformId: string) => {
+    const platforms: Record<string, string> = {
+      amazon: 'Amazon',
+      myntra: 'Myntra',
+      flipkart: 'Flipkart',
+      etsy: 'Etsy',
+      shopify: 'Shopify',
+      walmart: 'Walmart',
+      bestbuy: 'Best Buy',
+      target: 'Target',
+      aliexpress: 'AliExpress',
+      ebay: 'eBay',
+      custom: 'Other'
+    };
+    return platforms[platformId] || 'Other';
+  };
+
+  // Category Selection Modal
+  const CategorySelectionModal = () => (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={() => setShowCategorySelect(false)}
+      />
+
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[80vh] sm:max-h-[70vh] overflow-hidden">
+        <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between">
+          <h3 className="font-semibold text-lg">Select Category</h3>
+          <button
+            onClick={() => setShowCategorySelect(false)}
+            className="p-2 hover:bg-gray-100 rounded-full transition"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="overflow-y-auto p-2" style={{ maxHeight: 'calc(80vh - 60px)' }}>
+          {PRODUCT_CATEGORIES.map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setCategory(cat.id);
+                setShowCategorySelect(false);
+              }}
+              className={`
+                w-full p-4 text-left flex items-center gap-3 rounded-xl transition-all
+                ${category === cat.id
+                  ? 'bg-purple-50 border-2 border-purple-500'
+                  : 'hover:bg-gray-50 border-2 border-transparent'
+                }
+              `}
+            >
+              <span className="text-2xl">{cat.icon}</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <p className={`font-semibold ${category === cat.id ? 'text-purple-700' : 'text-gray-900'}`}>
+                    {cat.name}
+                  </p>
+                  {category === cat.id && <Check className="w-5 h-5 text-purple-600" />}
+                </div>
+                {cat.subcategories && cat.subcategories.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {cat.subcategories.slice(0, 4).map(sub => sub.name).join(' • ')}
+                    {cat.subcategories.length > 4 && ` +${cat.subcategories.length - 4}`}
+                  </p>
+                )}
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div className="sticky bottom-0 bg-white border-t p-4">
+          <button
+            onClick={() => setShowCategorySelect(false)}
+            className="w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-medium"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center overflow-y-auto">
-      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto">
-        <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white rounded-t-2xl">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto relative">
+        <div className="p-4 border-b flex items-center justify-between sticky top-0 bg-white rounded-t-2xl z-10">
           <h3 className="text-lg font-semibold">Add Product</h3>
           <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-700">
             <X className="w-6 h-6" />
@@ -293,11 +442,11 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                 setEditMode(true);
               }}
               placeholder="https://amazon.in/dp/... or https://amzn.to/..."
-              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none"
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none text-sm"
               required
             />
             <p className="text-xs text-gray-400 mt-1">
-              💡 Paste any product link. Title, description, price, and image will be auto-fetched.
+              💡 Paste any product link. Title, description, price, image, platform, and category will be auto-detected.
             </p>
           </div>
 
@@ -305,18 +454,8 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
           {isFetching && (
             <div className="bg-blue-50 rounded-xl p-3">
               <div className="flex items-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-500 border-t-transparent"></div>
                 <span className="text-sm text-blue-600">Fetching product information...</span>
-              </div>
-              <div className="mt-2 space-y-1 text-xs text-blue-500">
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${fetchStatus.details === 'fetching' ? 'bg-blue-500 animate-pulse' : fetchStatus.details === 'success' ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span>Product details (title, description, price)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${fetchStatus.image === 'fetching' ? 'bg-blue-500 animate-pulse' : fetchStatus.image === 'success' ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <span>Product image (trying multiple methods)</span>
-                </div>
               </div>
             </div>
           )}
@@ -335,6 +474,91 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
             </div>
           )}
 
+          {/* Detected Platform Info */}
+          {detectedPlatform && detectedPlatform !== 'custom' && (
+            <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">
+                  {detectedPlatform === 'amazon' && '🛒'}
+                  {detectedPlatform === 'myntra' && '👗'}
+                  {detectedPlatform === 'flipkart' && '📦'}
+                  {detectedPlatform === 'etsy' && '🎨'}
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-blue-800">
+                    Platform Detected: {getPlatformDisplayName(detectedPlatform)}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-0.5">
+                    Auto-detected from product link
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Detected Category Info */}
+          {detectedCategory && detectedCategory !== 'misc' && (
+            <div className="bg-green-50 rounded-xl p-3 border border-green-200">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{getCategoryIcon(detectedCategory)}</span>
+                <div>
+                  <p className="text-sm font-medium text-green-800">
+                    Category Detected: {getCategoryName(detectedCategory)}
+                  </p>
+                  <p className="text-xs text-green-600 mt-0.5">
+                    Auto-detected from product link and title
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Platform Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Platform</label>
+            <select
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+              className="w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-black outline-none bg-white"
+            >
+              <option value="amazon">Amazon</option>
+              <option value="myntra">Myntra</option>
+              <option value="flipkart">Flipkart</option>
+              <option value="etsy">Etsy</option>
+              <option value="shopify">Shopify</option>
+              <option value="walmart">Walmart</option>
+              <option value="bestbuy">Best Buy</option>
+              <option value="target">Target</option>
+              <option value="aliexpress">AliExpress</option>
+              <option value="ebay">eBay</option>
+              <option value="custom">Other</option>
+            </select>
+          </div>
+
+          {/* Category Selection */}
+          <div>
+            <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Category *
+            </label>
+
+            <button
+              type="button"
+              onClick={() => setShowCategorySelect(true)}
+              className="w-full px-4 py-3 border rounded-xl text-left flex items-center justify-between hover:border-gray-400 transition bg-white"
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-xl">{getCategoryIcon(category)}</span>
+                <span className="text-sm">{getCategoryName(category)}</span>
+              </div>
+              <span className="text-gray-400">▼</span>
+            </button>
+
+            <p className="text-xs text-gray-400 mt-1">
+              Select the appropriate category for better organization
+            </p>
+          </div>
+
           {/* Product Details Section */}
           {(title || description || price) && (
             <div className="border rounded-xl overflow-hidden">
@@ -342,7 +566,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                 <span className="text-xs font-medium text-gray-600">Product Details</span>
               </div>
               <div className="p-3 space-y-3">
-                {/* Title */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Title *</label>
                   <input
@@ -355,7 +578,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                   />
                 </div>
 
-                {/* Description */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1">Description</label>
                   <textarea
@@ -367,7 +589,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                   />
                 </div>
 
-                {/* Price & Platform */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-500 mb-1">Price</label>
@@ -378,20 +599,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                       className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
                       placeholder="₹49,999"
                     />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1">Platform</label>
-                    <select
-                      value={platform}
-                      onChange={(e) => setPlatform(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-black outline-none"
-                    >
-                      <option value="amazon">Amazon</option>
-                      <option value="myntra">Myntra</option>
-                      <option value="flipkart">Flipkart</option>
-                      <option value="etsy">Etsy</option>
-                      <option value="custom">Other</option>
-                    </select>
                   </div>
                 </div>
               </div>
@@ -413,7 +620,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
               )}
             </div>
             <div className="p-3">
-              {/* Auto-fetched image or uploaded image */}
               {imageUrl ? (
                 <div className="relative">
                   <img
@@ -431,15 +637,6 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                   >
                     <X className="w-4 h-4" />
                   </button>
-                  <p className="text-xs text-gray-400 mt-1 text-center">
-                    {imageSource === 'auto' ? '✓ Auto-fetched' : imageSource === 'upload' ? '✓ Uploaded' : '✓ Manual entry'}
-                  </p>
-                </div>
-              ) : isFetching && fetchStatus.image === 'fetching' ? (
-                <div className="border-2 border-dashed rounded-xl p-8 text-center">
-                  <Loader2 className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">Fetching image...</p>
-                  <p className="text-xs text-gray-400 mt-1">Trying multiple methods</p>
                 </div>
               ) : showManualImageInput ? (
                 <div className="space-y-2">
@@ -469,23 +666,21 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                     <p className="text-xs text-gray-500">Or drag & drop an image file</p>
                   </div>
                 </div>
-              ) : !imageUrl && fetchStatus.image === 'failed' ? (
-                <div className="border-2 border-dashed rounded-xl p-8 text-center">
-                  <ImageIcon className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">No image fetched</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowManualImageInput(true)}
-                    className="mt-2 text-xs text-blue-500 hover:text-blue-600"
-                  >
-                    Add image manually
-                  </button>
+              ) : (
+                <div
+                  {...getRootProps()}
+                  className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition hover:border-gray-400"
+                >
+                  <input {...getInputProps()} />
+                  <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-sm text-gray-500">Click or drag to upload</p>
+                  <p className="text-xs text-gray-400 mt-1">JPG, PNG, GIF up to 5MB</p>
                 </div>
-              ) : null}
+              )}
             </div>
           </div>
 
-          {/* Final Preview (only if all fields filled) */}
+          {/* Final Preview */}
           {title && imageUrl && buyLink && (
             <div className="bg-gray-50 rounded-xl p-3">
               <p className="text-xs font-medium text-gray-500 mb-2">Final Preview:</p>
@@ -498,13 +693,21 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium line-clamp-1">{title}</p>
                   {price && <p className="text-xs text-green-600">{price}</p>}
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-xs text-gray-500">Platform: {getPlatformDisplayName(platform)}</span>
+                    <span className="text-xs text-gray-300">•</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs">{getCategoryIcon(category)}</span>
+                      <span className="text-xs text-gray-500">{getCategoryName(category)}</span>
+                    </div>
+                  </div>
                   <a
                     href={buyLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-blue-500 hover:underline flex items-center gap-1"
+                    className="text-xs text-blue-500 hover:underline flex items-center gap-1 mt-1"
                   >
-                    View on {platform} <ExternalLink className="w-3 h-3" />
+                    View Product <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
               </div>
@@ -520,6 +723,9 @@ export default function AddProductModal({ onClose, onSave }: AddProductModalProp
           </button>
         </form>
       </div>
+
+      {/* Category Selection Modal */}
+      {showCategorySelect && <CategorySelectionModal />}
     </div>
   );
 }

@@ -1,0 +1,376 @@
+
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Product Upload Helper</title>
+        <style>
+            body { font-family: Arial; padding: 20px; }
+            .product { border: 1px solid #ccc; margin: 10px 0; padding: 10px; border-radius: 5px; }
+            .title { font-weight: bold; color: #333; }
+            .url { color: #0066cc; font-size: 12px; }
+            .image { color: #009900; font-size: 12px; }
+            .price { color: #cc0000; font-weight: bold; }
+            button { margin-top: 10px; padding: 5px 10px; cursor: pointer; }
+        </style>
+    </head>
+    <body>
+        <h1>Product Upload Helper</h1>
+        <p>Open <a href="http://localhost:3000/studio" target="_blank">Studio</a> and add products manually</p>
+        <div id="products">
+    
+        <div class="product" id="product-0">
+            <div class="title">1. Canon EOS R50 RF-S18-45mm f/4.5-6.3 IS STM Mirrorless Camera</div>
+            <div class="url">URL: http://amzn.to/49mAjmL</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/81LskAU5h1L._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹61990</div>
+            <button onclick="copyToClipboard(0)">Copy Details</button>
+            <button onclick="markDone(0)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-1">
+            <div class="title">2. MuscleBlaze Biozyme Performance Whey Protein Powder, Chocolate Hazelnut (1kg / 2.2lbs) | 25g Protein Per Scoop | Clinically Tested 50% Higher Protein Absorption</div>
+            <div class="url">URL: https://amzn.to/49jwkHy</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71jYctugZML._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹3149</div>
+            <button onclick="copyToClipboard(1)">Copy Details</button>
+            <button onclick="markDone(1)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-2">
+            <div class="title">3. Apple AirTag 4 Pack â€‹â€‹â€‹â€‹â€‹â€‹â€‹</div>
+            <div class="url">URL: https://amzn.to/4wdfOmx%60</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/611DjYhflAL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹11499</div>
+            <button onclick="copyToClipboard(2)">Copy Details</button>
+            <button onclick="markDone(2)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-3">
+            <div class="title">4. Apple iPhone Air 512 GB: Thinnest iPhone Ever, 16.63 cm (6.5â€³) Display with Promotion up to 120Hz, Powerful A19 Pro Chip, Center Stage Front Camera, All-Day Battery Life; Cloud White</div>
+            <div class="url">URL: https://amzn.to/4ddg1gC</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61+0aSXsyGL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹117900</div>
+            <button onclick="copyToClipboard(3)">Copy Details</button>
+            <button onclick="markDone(3)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-4">
+            <div class="title">5. Samsung Galaxy S26 Ultra 5G (Cobalt Violet, 12GB RAM, 256GB Storage) with Built-in Privacy Display, AI Phone, Photo Assist, Creative Studio, 200MP Camera, 5000mAh Battery and Snapdragon 8 Elite Gen 5</div>
+            <div class="url">URL: https://amzn.to/4nfetaJ</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71KJYEsadwL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹130999</div>
+            <button onclick="copyToClipboard(4)">Copy Details</button>
+            <button onclick="markDone(4)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-5">
+            <div class="title">6. Samsung Galaxy S25 Ultra 5G Mobile with Galaxy AI</div>
+            <div class="url">URL: https://amzn.to/3QTciNW</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71tl8pu4fKL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹99999</div>
+            <button onclick="copyToClipboard(5)">Copy Details</button>
+            <button onclick="markDone(5)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-6">
+            <div class="title">7. Samsung Galaxy S23 Ultra 5G AI Smartphone</div>
+            <div class="url">URL: https://amzn.to/4dd1cuz</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71goZuIha-L._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹500</div>
+            <button onclick="copyToClipboard(6)">Copy Details</button>
+            <button onclick="markDone(6)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-7">
+            <div class="title">8. Apple iPhone Air 512 GB: Thinnest iPhone Ever, 16.63 cm (6.5â€³) Display with Promotion up to 120Hz, Powerful A19 Pro Chip, Center Stage Front Camera, All-Day Battery Life; Cloud White</div>
+            <div class="url">URL: https://amzn.to/4dhDIob</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61+0aSXsyGL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹117900</div>
+            <button onclick="copyToClipboard(7)">Copy Details</button>
+            <button onclick="markDone(7)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-8">
+            <div class="title">9. OnePlus 13s Snapdragon 8 Elite Smartphone</div>
+            <div class="url">URL: https://amzn.to/42T076j</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61EUYqQSoTL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹49999</div>
+            <button onclick="copyToClipboard(8)">Copy Details</button>
+            <button onclick="markDone(8)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-9">
+            <div class="title">10. Samsung Galaxy S26 5G (Black, 12GB RAM, 512GB Storage), AI Phone, Photo Assist, Creative Studio, 50MP Camera with ProVisual Engine, Powerful Customized Processor and 4300mAh Battery</div>
+            <div class="url">URL: https://amzn.to/4uzjux5</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71Zxkc4xv3L._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹99999</div>
+            <button onclick="copyToClipboard(9)">Copy Details</button>
+            <button onclick="markDone(9)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-10">
+            <div class="title">11. Apple iPhone Air 1 TB: Thinnest iPhone Ever, 16.63 cm (6.5â€³) Display with Promotion up to 120Hz, Powerful A19 Pro Chip, Center Stage Front Camera, All-Day Battery Life; Space Black</div>
+            <div class="url">URL: https://amzn.to/3RdA8E5</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61knPJtYRpL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹137900</div>
+            <button onclick="copyToClipboard(10)">Copy Details</button>
+            <button onclick="markDone(10)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-11">
+            <div class="title">12. iPhone Air Smartphone, 1 TB</div>
+            <div class="url">URL: https://amzn.to/4wioMyO</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/614MsdnfBxL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹135490</div>
+            <button onclick="copyToClipboard(11)">Copy Details</button>
+            <button onclick="markDone(11)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-12">
+            <div class="title">13. TRIDEO 26X Ultra HD Zoom Telescopic Lens, 4K HD Optical Zoom Mobile Telescope Lens kit for All Mobile Camera,ro Lens &amp; Wide Angle Effect Lens</div>
+            <div class="url">URL: https://amzn.to/4wioXtY</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61oGdFnQROL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹2999</div>
+            <button onclick="copyToClipboard(12)">Copy Details</button>
+            <button onclick="markDone(12)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-13">
+            <div class="title">14. OnePlus 13 Smartphone with OnePlus AI</div>
+            <div class="url">URL: https://amzn.to/4nAKxGh</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71vRZZ+FCiL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹62998</div>
+            <button onclick="copyToClipboard(13)">Copy Details</button>
+            <button onclick="markDone(13)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-14">
+            <div class="title">15. Blackstar Armstrong - Multi-Purpose Magnetic Mobile Holder for Car Dashboard/Windshield with 540Â° Angle Rotation - Use in AC Vent &amp; Car Dashboard (Incompatible with MagSafe)</div>
+            <div class="url">URL: https://amzn.to/4ndYdGJ</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61HBcYsNApL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹744</div>
+            <button onclick="copyToClipboard(14)">Copy Details</button>
+            <button onclick="markDone(14)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-15">
+            <div class="title">16. ASUS TUF Gaming F16,Intel Core 5 Processor 210H,14thGen Gaming Laptop(RTX 3050-6GB/65WTGP/16GB/512GB/FHD+/16&quot;/144Hz/Windows 11/M365 Basic(1Year)*/Office 2024/Mecha Gray/2.20 Kg) FX607VJB-RL179WS</div>
+            <div class="url">URL: https://amzn.to/4ddt7KK</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/612vvgfTg1L._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹74990</div>
+            <button onclick="copyToClipboard(15)">Copy Details</button>
+            <button onclick="markDone(15)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-16">
+            <div class="title">17. ASUS TUF A15 (2025), AMD Ryzen 7 7445HS,RTX 3050-4GB,75W TGP,16GB DDR5(Upgradeable Upto 64GB) 512GB SSD,FHD,15.6&quot;,144Hz,RGB Keyboard,Windows 11,Graphite Black,2.3 Kg FA506NCG-HN199W, Gaming La...</div>
+            <div class="url">URL: https://amzn.to/4ttyv2B</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/81nPkLHN3vL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹67990</div>
+            <button onclick="copyToClipboard(16)">Copy Details</button>
+            <button onclick="markDone(16)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-17">
+            <div class="title">18. ASUS Gaming V16 (2025), Intel Core 5 210H, RTX 3050-6GB, 16GB RAM, 512GB SSD, FHD+, 16&quot;, 40 cm, Windows 11 Home, M365 Basic(1yr)* Office24, Matte Black, 1.95 Kg, V3607VJ-RP134WS, Gaming Laptop</div>
+            <div class="url">URL: https://amzn.to/42UlOTt</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71-7wPSmOJL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹69990</div>
+            <button onclick="copyToClipboard(17)">Copy Details</button>
+            <button onclick="markDone(17)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-18">
+            <div class="title">19. ASUS Vivobook 15, Smartchoice, AMD Ryzen 7 5825U, 16GB RAM, 512GB SSD, FHD 15.6&quot;, Windows 11, Office Home 2024, Quiet Blue, 1.7Kg, M1502YA-BQ703WS, AMD Radeon iGPU, M365 Basic (1Year)*, 42Whr ...</div>
+            <div class="url">URL: https://amzn.to/4nhPdR7</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71zMooVIVAL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹53990</div>
+            <button onclick="copyToClipboard(18)">Copy Details</button>
+            <button onclick="markDone(18)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-19">
+            <div class="title">20. ASUS ROG XBOX Ally (2025), AMD Ryzen Z2 A Processor,16GB RAM, 512GB SSD, 7&quot;/17.8cm, FHD, Touchscreen,120Hz, 500 nits, Windows 11 Home, White, 670g, RC73YA-NH010W,AMD Radeon Graphics,Gaming Han...</div>
+            <div class="url">URL: https://amzn.to/49DpD3d</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61c0Ufa7IdL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹59990</div>
+            <button onclick="copyToClipboard(19)">Copy Details</button>
+            <button onclick="markDone(19)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-20">
+            <div class="title">21. ASUS Vivobook S16,14th Gen, Intel Core 5-210H,Metallic Design Laptop(Intel UHD iGPU/16GB RAM/512GB SSD/FHD+/16&quot;&quot;/144Hz/Windows 11/M365 Basic(1Year)*/Office Home 2024/Matte Gray/1.7Kg) S36...</div>
+            <div class="url">URL: https://amzn.to/3Pr9IhG</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71mmoaQ4EzL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹63990</div>
+            <button onclick="copyToClipboard(20)">Copy Details</button>
+            <button onclick="markDone(20)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-21">
+            <div class="title">22. ASUS Vivobook 16, 13th Gen, Intel Core i5-13420H,16GB RAM,512GB SSD,FHD (1920 x 1200) OLED,Win 11,M365 Basic (1Year)*,Backlit Keyboard,Office 2024,Silver,1.88 kg,X1605VA-SH1952WS, Thin &amp; Light ...</div>
+            <div class="url">URL: https://amzn.to/498up8X</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71aaW7HXKnL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹61990</div>
+            <button onclick="copyToClipboard(21)">Copy Details</button>
+            <button onclick="markDone(21)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-22">
+            <div class="title">23. ASUS Vivobook 16, 13th Gen, Intel Core i5-13420H,16GB RAM,512GB SSD,FHD (1920 x 1200) OLED,Win 11,M365 Basic (1Year)*,Backlit Keyboard,Office 2024,Silver,1.88 kg,X1605VA-SH1952WS, Thin &amp; Light ...</div>
+            <div class="url">URL: https://amzn.to/49jxZNi</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71aaW7HXKnL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹61990</div>
+            <button onclick="copyToClipboard(22)">Copy Details</button>
+            <button onclick="markDone(22)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-23">
+            <div class="title">24. ASUS Vivobook 16X (2025), Intel Core i7-13620H, RTX 3050-4GB,16GB RAM,512GB SSD,FHD+,16&quot;,144Hz,M365 Basic (1Year)*,Office 2024,Indie Black,1.8 Kg K3605VC-RP517WS, Creator/Gaming Laptop</div>
+            <div class="url">URL: https://amzn.to/4wiSe7O</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71IaDF8CyhL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹72990</div>
+            <button onclick="copyToClipboard(23)">Copy Details</button>
+            <button onclick="markDone(23)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-24">
+            <div class="title">25. ASUS TUF A15, AMD Ryzen 7 7445HS, Gaming Laptop(RTX 3050-4GB/75W TGP/16GB RAM/512GB SSD/FHD/15.6&quot;/144Hz/Backlit Keyboard/48Whrs/Win11/MS Office24/Graphite Black/2.3 Kg) FA506NCG-HN200WS</div>
+            <div class="url">URL: https://amzn.to/3QNHPRo</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71NNmJ0SE8L._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹69990</div>
+            <button onclick="copyToClipboard(24)">Copy Details</button>
+            <button onclick="markDone(24)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-25">
+            <div class="title">26. ASUS Vivobook 15, Smartchoice,Intel Core i5 13th Gen 13420H,16GB RAM, 512GB SSD, FHD 15.6&quot;,Windows 11, Office Home 2024, Quiet Blue, 1.70 kg, X1502VA-BQ836WS,Intel UHD iGPU, M365 Basic (1Year)...</div>
+            <div class="url">URL: https://amzn.to/4dhZPLj</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/818iNyzckGL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹59990</div>
+            <button onclick="copyToClipboard(25)">Copy Details</button>
+            <button onclick="markDone(25)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-26">
+            <div class="title">27. ASUS Vivobook 15, Smartchoice,Intel Core i5 13th Gen 13420H,16GB RAM, 512GB SSD, FHD 15.6&quot;,Windows 11, Office Home 2024, Quiet Blue, 1.70 kg, X1502VA-BQ836WS,Intel UHD iGPU, M365 Basic (1Year)...</div>
+            <div class="url">URL: https://amzn.to/3OQZR4F</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/818iNyzckGL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹59990</div>
+            <button onclick="copyToClipboard(26)">Copy Details</button>
+            <button onclick="markDone(26)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-27">
+            <div class="title">28. ASUS Vivobook 16X, 16&quot; FHD+ (1920 x 1200), Intel Core i5-13420H, (16GB RAM/512GB SSD/RTX 3050/Windows 11/M365 Basic (1Year)*/Office Home 2024/Cool Silver/1.80 kg), K3605VC-RP413WS</div>
+            <div class="url">URL: https://amzn.to/42WHuym</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/7177n83vOwL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹71000</div>
+            <button onclick="copyToClipboard(27)">Copy Details</button>
+            <button onclick="markDone(27)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-28">
+            <div class="title">29. ASUS Vivobook 15, 15.6&quot; FHD (1920 x 1080), Intel Core i3-1315U, (16GB RAM/512GB SSD/IntelÂ® UHD/Win 11/M365 Basic (1Year)*/Backlit Keyboard/Office Home 2024/Cool Silver/1.70 kg), X1504VA-NJ2324WS</div>
+            <div class="url">URL: https://amzn.to/4f9cuT8</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71qB0p4nbrL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹48890</div>
+            <button onclick="copyToClipboard(28)">Copy Details</button>
+            <button onclick="markDone(28)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-29">
+            <div class="title">30. ASUS Vivobook 15 (2025), 13th Gen,Intel Core i3-1315U, 8GB RAM, 512GB SSD, FHD, 15.6&quot;, 39.6 cm, Windows 11 Home,M365 Basic(1 Year)* Office 2024,Cool Silver,1.7 Kg, X1504VA-D5321WS, Thin &amp; ...</div>
+            <div class="url">URL: https://amzn.to/4ddDEG4</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71bIUPAleZL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹45890</div>
+            <button onclick="copyToClipboard(29)">Copy Details</button>
+            <button onclick="markDone(29)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-30">
+            <div class="title">31. ASUS Vivobook 15 (2025), 13th Gen,Intel Core i3-1315U, 8GB RAM, 512GB SSD, FHD, 15.6&quot;, 39.6 cm, Windows 11 Home,M365 Basic(1 Year)* Office 2024,Cool Silver,1.7 Kg, X1504VA-D5321WS, Thin &amp; ...</div>
+            <div class="url">URL: https://amzn.to/4trlRkC</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71bIUPAleZL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹45890</div>
+            <button onclick="copyToClipboard(30)">Copy Details</button>
+            <button onclick="markDone(30)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-31">
+            <div class="title">32. ASUS Vivobook S16,Intel Core Ultra 5 225H,AI PC(Intel Arc iGPU/16GB RAM/512GB SSD/FHD/16/60Hz/Backlit Keyboard/70Whr/Windows 11/M365 Basic(1Year)*/Office Home 2024/Cool Silver/1.7 Kg) S3607CA-SH071WS</div>
+            <div class="url">URL: https://amzn.to/4tTm8xK</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71MAe4Du8uL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹79990</div>
+            <button onclick="copyToClipboard(31)">Copy Details</button>
+            <button onclick="markDone(31)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-32">
+            <div class="title">33. ASUS Zenbook 14, Intel Core Ultra 5 Series 2, 16GB RAM, 1TB SSD, 3K OLED 14&quot;, Touchscreen, Win 11, Office Home 2024, Ponder Blue, 1.28kg, UX3405CA-PZ162WS, Intel Arc iGPU, M365 Basic (1Year)* ...</div>
+            <div class="url">URL: https://amzn.to/4uGOaNb</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71n6Fs5KQPL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹106990</div>
+            <button onclick="copyToClipboard(32)">Copy Details</button>
+            <button onclick="markDone(32)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-33">
+            <div class="title">34. ASUS Vivobook 16X,Intel Core i7-13620H,RTX 3050-4GB,16GB RAM,512GB SSD,FHD+,16&quot;,144Hz,M365 Basic (1Year)*,Office Home 2024,Cool Silver,1.8 Kg, K3605VC-RP492WS,Creator/Gaming Laptop</div>
+            <div class="url">URL: https://amzn.to/4cX6A6b</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71Y0cHsrd1L._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹72990</div>
+            <button onclick="copyToClipboard(33)">Copy Details</button>
+            <button onclick="markDone(33)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-34">
+            <div class="title">35. ASUS Vivobook 15 (2025), AMD Ryzen 7 7730U Thin &amp; Light Laptop(AMD Radeon iGPU/16GB RAM/512GB SSD/FHD/15.6&quot;/60Hz/Windows 11/M365 Basic (1Year)*/Office Home 2024/Quiet Blue/1.7Kg) M1502YA-B...</div>
+            <div class="url">URL: https://amzn.to/4u1NBxt</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61N-3LSyoBL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹66800</div>
+            <button onclick="copyToClipboard(34)">Copy Details</button>
+            <button onclick="markDone(34)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-35">
+            <div class="title">36. ASUS Vivobook 15 (2025), AMD Ryzen 7 7730U Thin &amp; Light Laptop(AMD Radeon iGPU/16GB RAM/512GB SSD/FHD/15.6&quot;/60Hz/Windows 11/M365 Basic (1Year)*/Office Home 2024/Quiet Blue/1.7Kg) M1502YA-B...</div>
+            <div class="url">URL: https://amzn.to/4u0sRWX</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/61N-3LSyoBL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹66800</div>
+            <button onclick="copyToClipboard(35)">Copy Details</button>
+            <button onclick="markDone(35)">Mark Done</button>
+        </div>
+        
+        <div class="product" id="product-36">
+            <div class="title">37. ASUS Gaming V16 (2025) 14th Gen,Intel Core 7 240H Gaming Laptop (RTX 4050-6GB/16GB RAM/512GB SSD/Windows 11 Home/16/144Hz/M365*/Office Home 2024, Matte Black,1.95 Kg),V3607VU-RP275WS</div>
+            <div class="url">URL: https://amzn.to/4f9TZhn</div>
+            <div class="image">Image: https://m.media-amazon.com/images/I/71YeigfZCuL._SL1500_.jpg...</div>
+            <div class="price">Price: â‚¹92990</div>
+            <button onclick="copyToClipboard(36)">Copy Details</button>
+            <button onclick="markDone(36)">Mark Done</button>
+        </div>
+        
+        </div>
+        <script>
+            function copyToClipboard(index) {
+                const product = document.getElementById(`product-${index}`);
+                const title = product.querySelector('.title').innerText;
+                const url = product.querySelector('.url').innerText.replace('URL: ', '');
+                const image = product.querySelector('.image').innerText.replace('Image: ', '');
+                const price = product.querySelector('.price').innerText.replace('Price: ', '');
+
+                const text = `Title: ${title}\nLink: ${url}\nPrice: ${price}\nImage URL: ${image}`;
+                navigator.clipboard.writeText(text);
+                alert('Copied! Paste in the Add Product form');
+            }
+
+            function markDone(index) {
+                const product = document.getElementById(`product-${index}`);
+                product.style.backgroundColor = '#ccffcc';
+                product.style.opacity = '0.7';
+            }
+        </script>
+    </body>
+    </html>
+    

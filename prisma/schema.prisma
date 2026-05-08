@@ -61,6 +61,9 @@ model Portal {
   adminBackgroundImage String?
   adminTextColor       String?
   adminFontFamily      String?   @default("font-sans")
+  // New fields for public profile customization
+  displayName   String?
+  avatarUrl     String?
 }
 
 model Link {
@@ -91,7 +94,7 @@ model Click {
   device    String?
 }
 
-// prisma/schema.prisma - Add description field to Product model
+// prisma/schema.prisma - Add category to Product model
 model Product {
   id          String    @id @default(cuid())
   title       String
@@ -100,6 +103,7 @@ model Product {
   buyLink     String
   price       String?
   platform    String    @default("custom")
+  category    String    @default("misc")
   order       Int       @default(0)
   portalId    String
   portal      Portal    @relation(fields: [portalId], references: [id])

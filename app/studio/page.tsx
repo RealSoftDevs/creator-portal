@@ -1,143 +1,60 @@
 // app/studio/page.tsx
 'use client';
+import MobileSidebar from './components/MobileSidebar';
 
-import { useState, useEffect, lazy, Suspense, useCallback, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  LogOut, Palette, Crown, ArrowLeft, Plus, Trash2, Eye, Check, X, Edit2, Loader2, Layers, ExternalLink
+  Settings,
+  User,
+  LogOut,
+  Menu,
+  X,
+  Layout,
+  Palette,
+  Link2,
+  Package,
+  Image as ImageIcon,
+  Sparkles,
+  Crown,
+  Eye,
+  Save,
+  RefreshCw
 } from 'lucide-react';
-import { getTemplateById } from '@/lib/templates/index';
 import { useStudioData } from './hooks/useStudioData';
-import { useBackButton } from '@/app/hooks/useBackButton';
-import { useAuth } from '@/app/hooks/useAuth';
-import ProductImage from './components/ProductImage';
+import LinksSection from './components/LinksSection';
+import GallerySection from './components/GallerySection';
+import AddLinkModal from './components/AddLinkModal';
+import AddProductModal from './components/AddProductModal';
 import EditProductModal from './components/EditProductModal';
+import ProfileSettingsModal from './components/ProfileSettingsModal';
+import TemplateSelector from './components/TemplateSelector';
+import StatsCard from './components/StatsCard';
+import PreviewCard from './components/PreviewCard';
+import LoadingSkeleton from './components/LoadingSkeleton';
 
-// Lazy load heavy components
-const TemplateSelectorModal = lazy(() => import('../components/TemplateSelectorModal'));
-const AddLinkModal = lazy(() => import('./components/AddLinkModal'));
-const AddProductModal = lazy(() => import('./components/AddProductModal'));
+interface PortalData {
+  id: string;
+  slug: string;
+  title: string;
+  bio: string;
+  displayName?: string;
+  avatarUrl?: string;
+  userName: string;
+  templateId: string;
+  primaryColor: string;
+  backgroundImage?: string;
+  backgroundType?: string;
+  gradientStart?: string;
+  gradientEnd?: string;
+  textColor?: string;
+  fontFamily?: string;
+  isPremium?: boolean;
+  customUsername?: string | null;
+}
 
-// Memoized stat card component for performance
-const StatCard = ({ value, label, limit, isPremium, textColorStyle }: any) => (
-  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 text-center shadow-sm">
-    <div className="text-2xl font-bold" style={textColorStyle}>{value}</div>
-    <div className="text-xs opacity-70" style={textColorStyle}>
-      {label} {limit && `(${value}/${limit})`}
-    </div>
-    {!isPremium && value >= (limit || 0) && (
-      <div className="text-[10px] text-yellow-500 mt-1">✨ Upgrade for more</div>
-    )}
-  </div>
-);
-
-// Memoized link item component
-const LinkItem = ({ link, textColorStyle, onDelete }: any) => (
-  <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 shadow-sm flex items-center gap-3 group">
-    {link.imageUrl && link.imageUrl !== '' && (
-      <ProductImage src={link.imageUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
-    )}
-    <div className="flex-1 min-w-0">
-      <h3 className="font-medium truncate" style={textColorStyle}>{link.title}</h3>
-      <p className="text-xs opacity-60 truncate" style={textColorStyle}>{link.url}</p>
-      {link.clicks > 0 && <p className="text-xs text-green-600 mt-1">{link.clicks} clicks</p>}
-    </div>
-    <button onClick={() => onDelete(link.id)} className="p-2 rounded-full hover:bg-red-500/20 transition opacity-0 group-hover:opacity-100">
-      <Trash2 className="w-4 h-4 text-red-500" />
-    </button>
-  </div>
-);
-
-// Memoized product item component with edit functionality
-const ProductItem = ({ product, textColorStyle, onDelete, onEdit }: any) => {
-  const hasValidImage = product.imageUrl &&
-                        product.imageUrl !== '' &&
-                        product.imageUrl !== 'null' &&
-                        product.imageUrl !== 'undefined';
-
-  return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden shadow-sm group">
-      <div className="relative w-full h-32">
-        {hasValidImage ? (
-          <ProductImage src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-            <div className="text-center">
-              <div className="text-3xl">🛍️</div>
-              <p className="text-xs text-gray-400">No image</p>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="p-2">
-        <h3 className="font-medium text-sm truncate" style={textColorStyle} title={product.title}>
-          {product.title}
-        </h3>
-        {product.price && <p className="text-xs text-green-600">{product.price}</p>}
-        {product.description && (
-          <p className="text-xs text-gray-500 line-clamp-2 mt-1" title={product.description}>
-            {product.description}
-          </p>
-        )}
-        <div className="flex gap-2 mt-2">
-          <button
-            onClick={() => onEdit(product)}
-            className="text-xs text-blue-500 hover:text-blue-700 transition"
-          >
-            Edit
-          </button>
-          <button
-            onClick={() => { if (confirm(`Delete "${product.title}"?`)) onDelete(product.id); }}
-            className="text-xs text-red-500 hover:text-red-700 transition"
-          >
-            Delete
-          </button>
-          {product.buyLink && (
-            <a
-              href={product.buyLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-blue-500 hover:text-blue-700 transition flex items-center gap-1"
-            >
-              View <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
-        </div>
-        {product.isDummy && <p className="text-xs text-gray-400 mt-1">Sample product</p>}
-      </div>
-    </div>
-  );
-};
-
-export default function StudioDashboard() {
+export default function StudioPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth('/login');
-  const [isPremium, setIsPremium] = useState(false);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showAddProductModal, setShowAddProductModal] = useState(false);
-  const [showEditProductModal, setShowEditProductModal] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<any>(null);
-  const [userName, setUserName] = useState('');
-  const [customUsername, setCustomUsername] = useState('');
-  const [isEditingUsername, setIsEditingUsername] = useState(false);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-
-  const [adminSettings, setAdminSettings] = useState({
-    templateId: 'template1',
-    primaryColor: '#f5f5f5',
-    textColor: '#1a1a1a',
-    fontFamily: 'font-sans',
-    backgroundType: 'image',
-    gradientStart: '#fb923c',
-    gradientEnd: '#fde047',
-    backgroundImage: '/images/default-bg.jpg'
-  });
-
-  const [useSeparateAdminStyle, setUseSeparateAdminStyle] = useState(false);
-
-  // Destructure all needed functions from useStudioData
   const {
     links,
     products,
@@ -145,490 +62,673 @@ export default function StudioDashboard() {
     portalSlug,
     addLink,
     addProduct,
-    updateProduct,
     deleteLink,
+    updateProduct,
     deleteProduct,
     fetchLinks,
-    fetchProducts
+    fetchProducts,
+    setLoading
   } = useStudioData();
 
-  const handleGoToDashboard = useCallback(() => router.push('/dashboard'), [router]);
-  useBackButton(handleGoToDashboard, true);
 
-  // Calculate stats with useMemo for performance
-  const stats = useMemo(() => {
-    const realProductsCount = products.filter((p: any) => !p.isDummy).length;
-    const totalClicks = links.reduce((sum: number, link: any) => sum + (link.clicks || 0), 0);
-    return { realProductsCount, totalClicks };
-  }, [products, links]);
+// Add state
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
+  const [portal, setPortal] = useState<PortalData | null>(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [activeTab, setActiveTab] = useState<'links' | 'products' | 'appearance'>('links');
+
+  // Modal states
+  const [showAddLink, setShowAddLink] = useState(false);
+  const [showAddProduct, setShowAddProduct] = useState(false);
+  const [showProfileSettings, setShowProfileSettings] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+
+  // Form states for appearance
+  const [templateId, setTemplateId] = useState('template1');
+  const [primaryColor, setPrimaryColor] = useState('#f5f5f5');
+  const [textColor, setTextColor] = useState('#1a1a1a');
+  const [fontFamily, setFontFamily] = useState('font-sans');
+  const [backgroundType, setBackgroundType] = useState<'color' | 'gradient' | 'image'>('color');
+  const [gradientStart, setGradientStart] = useState('#fb923c');
+  const [gradientEnd, setGradientEnd] = useState('#fde047');
+  const [backgroundImage, setBackgroundImage] = useState('');
+  const [savingAppearance, setSavingAppearance] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+// Add effect to detect mobile
+useEffect(() => {
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 1024);
+  };
+  checkMobile();
+  window.addEventListener('resize', checkMobile);
+  return () => window.removeEventListener('resize', checkMobile);
+}, []);
+
+
+
+  // Fetch portal info on mount
   useEffect(() => {
-    if (isAuthenticated) {
-      const init = async () => {
-        setIsLoadingSettings(true);
-        await Promise.all([
-          loadCurrentSettings(),
-          fetchUserInfo(),
-          checkPremiumStatus(),
-          fetchLinks(),
-          fetchProducts()
-        ]);
-        setIsLoadingSettings(false);
-      };
-      init();
-    }
-  }, [isAuthenticated]);
-
-  const checkPremiumStatus = useCallback(async () => {
-    try {
-      const res = await fetch('/api/user/status');
-      const data = await res.json();
-      setIsPremium(data.isPremium);
-    } catch (error) {
-      console.error('Failed to check premium status:', error);
-    }
+    fetchPortalInfo();
   }, []);
 
-  const fetchUserInfo = useCallback(async () => {
+  const fetchPortalInfo = async () => {
     try {
       const res = await fetch('/api/portal/info');
+      if (res.status === 401) {
+        router.push('/login');
+        return;
+      }
       const data = await res.json();
-      if (data.userName) setUserName(data.userName);
-      else if (data.slug) setUserName(data.slug);
-      setCustomUsername(data.userName || data.slug);
+      setPortal(data);
+
+      // Initialize appearance form with portal data
+      if (data) {
+        setTemplateId(data.templateId || 'template1');
+        setPrimaryColor(data.primaryColor || '#f5f5f5');
+        setTextColor(data.textColor || '#1a1a1a');
+        setFontFamily(data.fontFamily || 'font-sans');
+        setBackgroundType(data.backgroundType || 'color');
+        setGradientStart(data.gradientStart || '#fb923c');
+        setGradientEnd(data.gradientEnd || '#fde047');
+        setBackgroundImage(data.backgroundImage || '');
+      }
     } catch (error) {
-      console.error('Failed to fetch user info:', error);
+      console.error('Failed to fetch portal info:', error);
     }
-  }, []);
+  };
 
-  const loadCurrentSettings = useCallback(async () => {
+  const handleUpdateProfile = async (updates: any) => {
     try {
-      const res = await fetch('/api/portal/info');
-      const data = await res.json();
-
-      const hasSeparateAdmin = data.adminTemplateId !== null && data.adminTemplateId !== undefined;
-      setUseSeparateAdminStyle(hasSeparateAdmin);
-
-      setAdminSettings({
-        templateId: data.adminTemplateId || data.templateId || 'template1',
-        primaryColor: data.adminPrimaryColor || data.primaryColor || '#f5f5f5',
-        textColor: data.adminTextColor || data.textColor || '#1a1a1a',
-        fontFamily: data.adminFontFamily || data.fontFamily || 'font-sans',
-        backgroundType: data.adminBackgroundType || data.backgroundType || 'image',
-        gradientStart: data.adminGradientStart || data.gradientStart || '#fb923c',
-        gradientEnd: data.adminGradientEnd || data.gradientEnd || '#fde047',
-        backgroundImage: data.adminBackgroundImage || data.backgroundImage || '/images/default-bg.jpg'
-      });
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-    }
-  }, []);
-
-  const updateUsername = useCallback(async () => {
-    if (!isPremium) {
-      alert('✨ Custom URL is a premium feature. Please upgrade to use it!');
-      setIsEditingUsername(false);
-      return;
-    }
-
-    if (!customUsername.trim() || customUsername.trim().length < 3) {
-      alert('Username must be at least 3 characters');
-      return;
-    }
-
-    const validUsername = customUsername.toLowerCase().replace(/[^a-z0-9_]/g, '');
-    if (validUsername !== customUsername.toLowerCase()) {
-      alert('Username can only contain letters, numbers, and underscores');
-      setCustomUsername(validUsername);
-      return;
-    }
-
-    try {
-      const res = await fetch('/api/portal/update-username', {
-        method: 'POST',
+      const res = await fetch('/api/portal/profile', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: validUsername })
+        body: JSON.stringify(updates)
       });
 
-      const data = await res.json();
-      if (data.success) {
-        setUserName(validUsername);
-        setIsEditingUsername(false);
-        alert(`Your page is now at: ${window.location.origin}/view/${validUsername}`);
+      if (res.ok) {
+        await fetchPortalInfo();
+        alert('Profile updated successfully!');
       } else {
-        alert(data.error || 'Username already taken');
+        throw new Error('Failed to update');
       }
     } catch (error) {
-      console.error('Failed to update username:', error);
-      alert('Failed to update username');
+      console.error('Update error:', error);
+      alert('Failed to update profile');
     }
-  }, [isPremium, customUsername]);
+  };
 
-  const updateTemplate = useCallback(async (config: any) => {
+  const handleSaveAppearance = async () => {
+    setSavingAppearance(true);
     try {
-      console.log(`📤 Sending update request for target: ${config.target}`);
-
-      const response = await fetch('/api/portal/update-template', {
-        method: 'POST',
+      const res = await fetch('/api/portal/appearance', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
+        body: JSON.stringify({
+          templateId,
+          primaryColor,
+          textColor,
+          fontFamily,
+          backgroundType,
+          gradientStart,
+          gradientEnd,
+          backgroundImage,
+        })
       });
-      const data = await response.json();
+
+      if (res.ok) {
+        await fetchPortalInfo();
+        alert('Appearance saved successfully!');
+      } else {
+        throw new Error('Failed to save');
+      }
+    } catch (error) {
+      console.error('Save error:', error);
+      alert('Failed to save appearance');
+    } finally {
+      setSavingAppearance(false);
+    }
+  };
+
+  const handleBackgroundImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
 
       if (data.success) {
-        console.log(`✅ Successfully updated ${config.target} settings`);
-
-        if (config.target === 'admin') {
-          setAdminSettings(prev => ({
-            ...prev,
-            templateId: config.templateId,
-            primaryColor: config.primaryColor,
-            textColor: config.textColor || '',
-            fontFamily: config.fontFamily || 'font-sans',
-            backgroundType: config.backgroundType,
-            gradientStart: config.gradientStart || '',
-            gradientEnd: config.gradientEnd || '',
-            backgroundImage: config.backgroundImage || '/images/default-bg.jpg'
-          }));
-          setUseSeparateAdminStyle(true);
-        } else if (config.target === 'public') {
-          // Optionally update public settings if needed
-          console.log('Public settings updated');
-        }
-        return true;
+        let imageUrl = data.url;
+        if (imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
+        setBackgroundImage(imageUrl);
+      } else {
+        alert('Upload failed');
       }
-      return false;
     } catch (error) {
-      console.error('Error updating template:', error);
-      return false;
+      console.error('Upload error:', error);
+      alert('Upload failed');
+    } finally {
+      setUploadingImage(false);
     }
-  }, []);
+  };
+const handleLogout = async () => {
+  try {
+    // Clear cookies and local storage
+    document.cookie.split(";").forEach(function(c) {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+    });
+    localStorage.clear();
+    sessionStorage.clear();
 
-  const handleUpgradeClick = useCallback(() => setShowPaymentModal(true), []);
-  const handleLogout = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-  }, [router]);
+    // Call logout API
+    await fetch('/api/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
 
-  const canAddLink = useCallback(() => !(!isPremium && links.length >= 1), [isPremium, links.length]);
-  const canAddProduct = useCallback(() => !(!isPremium && stats.realProductsCount >= 4), [isPremium, stats.realProductsCount]);
+    // Redirect to login
+    window.location.href = '/login';
+  } catch (error) {
+    console.error('Logout error:', error);
+    window.location.href = '/login';
+  }
+};
 
-  const handleAddLink = useCallback(async (linkData: any) => {
-    if (!canAddLink()) {
-      alert('✨ Free users can only add 1 link. Upgrade to Premium for more links!');
-      return;
-    }
-    await addLink(linkData);
-  }, [canAddLink, addLink]);
 
-  const handleAddProduct = useCallback(async (product: any) => {
-    if (!canAddProduct()) {
-      alert('✨ Free users can only add 4 products. Upgrade to Premium for more!');
-      return;
-    }
-    await addProduct(product);
-  }, [canAddProduct, addProduct]);
+   const textColorStyle = { color: textColor };
 
-  const handleEditProduct = useCallback((product: any) => {
-    setEditingProduct(product);
-    setShowEditProductModal(true);
-  }, []);
-
-  const handleUpdateProduct = useCallback(async (id: string, updates: any) => {
-    await updateProduct(id, updates);
-  }, [updateProduct]);
-
-  const getPublicUrl = useCallback(() => {
-    if (typeof window === 'undefined') return '';
-    const baseUrl = window.location.origin;
-
-    if (isPremium && userName && userName !== portalSlug) {
-      return `${baseUrl}/view/${userName}`;
-    }
-
-    return `${baseUrl}/view?slug=${portalSlug}`;
-  }, [isPremium, userName, portalSlug]);
-
-  const template = getTemplateById(adminSettings.templateId);
-
-  const backgroundStyle = useMemo(() => {
-    const style: React.CSSProperties = {};
-    let bgImageUrl = adminSettings.backgroundImage;
-
-    if (bgImageUrl && !bgImageUrl.startsWith('http') && !bgImageUrl.startsWith('/')) {
-      bgImageUrl = `/${bgImageUrl}`;
-    }
-
-    if (adminSettings.backgroundType === 'image' && bgImageUrl) {
-      style.backgroundImage = `url(${bgImageUrl})`;
-      style.backgroundSize = 'cover';
-      style.backgroundPosition = 'center';
-      style.backgroundAttachment = 'fixed';
-      style.minHeight = '100vh';
-    } else if (adminSettings.backgroundType === 'gradient' && adminSettings.gradientStart && adminSettings.gradientEnd) {
-      style.background = `linear-gradient(135deg, ${adminSettings.gradientStart}, ${adminSettings.gradientEnd})`;
-    } else {
-      style.backgroundColor = adminSettings.primaryColor || template.defaultBackground;
-    }
-    return style;
-  }, [adminSettings.backgroundType, adminSettings.backgroundImage, adminSettings.gradientStart,
-      adminSettings.gradientEnd, adminSettings.primaryColor, template.defaultBackground]);
-
-  const textColorStyle = useMemo(() => ({ color: adminSettings.textColor || template.defaultTextColor }),
-    [adminSettings.textColor, template.defaultTextColor]);
-  const fontClass = adminSettings.fontFamily || 'font-sans';
-
-  if (authLoading || isLoadingSettings) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Loading your studio...</p>
-        </div>
-      </div>
-    );
+  if (loading) {
+    return <LoadingSkeleton />;
   }
 
-  if (!isAuthenticated) return null;
+  const realProducts = products.filter(p => !p.isDummy);
+  const hasProducts = realProducts.length > 0;
+  const canAddMoreProducts = portal?.isPremium ? realProducts.length < 50 : realProducts.length < 4;
+  const canAddMoreLinks = portal?.isPremium ? links.length < 10 : links.length < 1;
 
   return (
-    <div className={`min-h-screen ${fontClass}`} style={backgroundStyle}>
-      {adminSettings.backgroundType === 'image' && adminSettings.backgroundImage && (
-        <div className="fixed inset-0 bg-black/20 pointer-events-none" />
-      )}
+    <div className="min-h-screen bg-gray-50">
 
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="bg-white/10 backdrop-blur-md border-b border-white/20 sticky top-0 z-10">
-          <div className="max-w-md mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <button onClick={handleGoToDashboard} className="p-1 rounded-full hover:bg-white/20 transition">
-                <ArrowLeft className="w-5 h-5" style={textColorStyle} />
-              </button>
-              <h1 className="text-xl font-bold" style={textColorStyle}>Creator Studio</h1>
+    {isMobile && (
+      <>
+        {/* Mobile Sidebar */}
+        <MobileSidebar
+          isOpen={isMobileSidebarOpen}
+          onClose={() => setIsMobileSidebarOpen(false)}
+          onOpen={() => setIsMobileSidebarOpen(true)}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          linksCount={links.length}
+          productsCount={realProducts.length}
+          isPremium={portal?.isPremium || false}
+          onProfileSettings={() => setShowProfileSettings(true)}
+          onLogout={handleLogout}
+        />
+      </>
+    )}
+
+      <div className="flex min-h-screen">
+        {/* Sidebar - Desktop & Mobile */}
+        <div className={`
+          fixed lg:static inset-y-0 left-0 z-40
+          w-64 bg-white border-r transform transition-transform duration-300
+          ${showMobileMenu ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <div className="p-6">
+            <div className="mb-8">
+              <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                CreatorPortal
+              </h1>
+              <p className="text-xs text-gray-500 mt-1">Studio Dashboard</p>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowTemplateSelector(true)} className="p-2 rounded-full hover:bg-white/20 transition">
-                <Palette className="w-5 h-5" style={textColorStyle} />
+
+            <nav className="space-y-2">
+              <button
+                onClick={() => { setActiveTab('links'); setShowMobileMenu(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+                  activeTab === 'links' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Link2 className="w-5 h-5" />
+                <span>Links</span>
+                {links.length > 0 && (
+                  <span className={`ml-auto text-xs ${activeTab === 'links' ? 'text-white/80' : 'text-gray-400'}`}>
+                    {links.length}
+                  </span>
+                )}
               </button>
-              <button onClick={handleLogout} className="p-2 rounded-full hover:bg-white/20 transition">
-                <LogOut className="w-5 h-5" style={textColorStyle} />
+
+              <button
+                onClick={() => { setActiveTab('products'); setShowMobileMenu(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+                  activeTab === 'products' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Package className="w-5 h-5" />
+                <span>Products</span>
+                {realProducts.length > 0 && (
+                  <span className={`ml-auto text-xs ${activeTab === 'products' ? 'text-white/80' : 'text-gray-400'}`}>
+                    {realProducts.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => { setActiveTab('appearance'); setShowMobileMenu(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition ${
+                  activeTab === 'appearance' ? 'bg-black text-white' : 'text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                <Palette className="w-5 h-5" />
+                <span>Appearance</span>
+              </button>
+            </nav>
+
+            <div className="absolute bottom-6 left-6 right-6 space-y-2">
+              <button
+                onClick={() => setShowProfileSettings(true)}
+                className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+              >
+                <User className="w-5 h-5" />
+                <span>Profile Settings</span>
+              </button>
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-red-600 hover:bg-red-50 transition"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Logout</span>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="max-w-md mx-auto px-4 py-6">
+        {/* Main Content */}
+        <div className="flex-1 lg:ml-0">
+          <div className="max-w-4xl mx-auto px-4 py-8 lg:px-8">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {activeTab === 'links' && 'Manage Links'}
+                  {activeTab === 'products' && 'Product Gallery'}
+                  {activeTab === 'appearance' && 'Customize Appearance'}
+                </h1>
+                <p className="text-sm text-gray-500 mt-1">
+                  {activeTab === 'links' && 'Add and manage your social media links'}
+                  {activeTab === 'products' && 'Showcase your products and affiliate items'}
+                  {activeTab === 'appearance' && 'Customize how your public page looks'}
+                </p>
+              </div>
 
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.open(`/view/${portal?.customUsername || portalSlug}`, '_blank')}
+                  className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span className="hidden sm:inline">Preview</span>
+                </button>
 
-          {/* Public Page Card */}
-          <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl p-4 text-white mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-sm opacity-90">Your public page</p>
-              <button onClick={() => window.open(getPublicUrl(), '_blank')} className="bg-white/20 px-3 py-1 rounded-full text-sm flex items-center gap-1 hover:bg-white/30 transition">
-                <Eye className="w-4 h-4" /> Preview
-              </button>
+                {portal?.isPremium && (
+                  <div className="flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full">
+                    <Crown className="w-4 h-4 text-white" />
+                    <span className="text-xs font-semibold text-white">Premium</span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {isPremium && userName && userName !== portalSlug ? (
-              <>
-                <p className="font-mono text-xs break-all">
-                  {typeof window !== 'undefined' && window.location.origin}/view/{userName}
-                </p>
-                <p className="text-[10px] opacity-60 mt-1">
-                  ℹ️ Old URL still works: {typeof window !== 'undefined' && window.location.origin}/view?slug={portalSlug}
-                </p>
-              </>
-            ) : (
-              <p className="font-mono text-xs break-all">{getPublicUrl()}</p>
+            {/* Stats Cards - Show on all tabs */}
+            <StatsCard
+              linksCount={links.length}
+              productsCount={realProducts.length}
+              totalClicks={links.reduce((sum, link) => sum + (link.clicks || 0), 0)}
+              textColorStyle={textColorStyle}
+              isPremium={portal?.isPremium || false}
+            />
+
+            {/* Preview Card */}
+            {portal && (
+              <PreviewCard
+                portalSlug={portalSlug}
+                customUsername={portal.customUsername || undefined}
+                isPremium={portal.isPremium}
+              />
             )}
 
-            {isPremium ? (
-              <div className="mt-3 pt-2 border-t border-white/20">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xs opacity-80">✨ Custom URL:</span>
-                  <span className="text-xs opacity-60">{typeof window !== 'undefined' && window.location.origin}/view/</span>
-                  {isEditingUsername ? (
-                    <>
-                      <input
-                        type="text"
-                        value={customUsername}
-                        onChange={(e) => setCustomUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-                        placeholder="yourname"
-                        className="flex-1 min-w-[100px] px-2 py-0.5 rounded bg-white/20 text-white text-xs focus:outline-none focus:ring-1 focus:ring-white"
-                        autoFocus
-                      />
-                      <button onClick={updateUsername} className="text-green-300 text-xs p-0.5 hover:bg-white/10 rounded">
-                        <Check className="w-3 h-3" />
-                      </button>
-                      <button onClick={() => { setIsEditingUsername(false); setCustomUsername(userName); }} className="text-red-300 text-xs p-0.5 hover:bg-white/10 rounded">
-                        <X className="w-3 h-3" />
-                      </button>
-                    </>
-                  ) : (
-                    <button onClick={() => { setCustomUsername(userName || portalSlug || ''); setIsEditingUsername(true); }} className="text-xs text-white/80 hover:text-white underline flex items-center gap-1">
-                      {userName || portalSlug || 'set-custom-url'} <Edit2 className="w-2.5 h-2.5" />
-                    </button>
-                  )}
-                </div>
+            {/* Tab Content */}
+            {activeTab === 'links' && (
+              <LinksSection
+                links={links}
+                onAdd={() => setShowAddLink(true)}
+                onDelete={deleteLink}
+                textColorStyle={textColorStyle}
+                isAddDisabled={!canAddMoreLinks}
+                limit={portal?.isPremium ? 10 : 1}
+              />
+            )}
+
+            {activeTab === 'products' && (
+              <div className="space-y-6">
+                <GallerySection
+                  products={products}
+                  onAdd={() => setShowAddProduct(true)}
+                  onEdit={(product) => setEditingProduct(product)}  // Add this line
+                  onDelete={deleteProduct}
+                  textColorStyle={textColorStyle}
+                />
+
+                {hasProducts && (
+                  <div className="bg-blue-50 rounded-xl p-4">
+                    <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      Pro Tip
+                    </h3>
+                    <p className="text-sm text-blue-800">
+                      Click on any product to edit its details. Products with images look best when using square (1:1) aspect ratio.
+                    </p>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="mt-3 pt-2 border-t border-white/20">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs opacity-80">✨ Custom URL</span>
-                  <button onClick={() => setShowPaymentModal(true)} className="bg-yellow-500/30 text-yellow-200 text-xs px-2 py-0.5 rounded-full hover:bg-yellow-500/40 transition">
-                    Upgrade
+            )}
+
+            {activeTab === 'appearance' && (
+              <div className="space-y-6">
+                {/* Template Selection */}
+                <div className="bg-white rounded-xl border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Layout className="w-5 h-5" />
+                    Template
+                  </h3>
+                  <button
+                    onClick={() => setShowTemplateSelector(true)}
+                    className="w-full p-4 border-2 border-dashed rounded-xl hover:border-gray-400 transition text-center"
+                  >
+                    <div className="text-4xl mb-2">🎨</div>
+                    <p className="text-sm text-gray-600">Click to change template</p>
+                    <p className="text-xs text-gray-400 mt-1">Current: {templateId}</p>
                   </button>
                 </div>
-              </div>
-            )}
-          </div>
 
-          {/* Stats Row */}
-          <div className="grid grid-cols-3 gap-3 mb-6">
-            <StatCard value={links.length} label="Links" limit={isPremium ? 10 : 1} isPremium={isPremium} textColorStyle={textColorStyle} />
-            <StatCard value={stats.realProductsCount} label="Products" limit={isPremium ? 50 : 4} isPremium={isPremium} textColorStyle={textColorStyle} />
-            <StatCard value={stats.totalClicks} label="Clicks" limit={null} isPremium={true} textColorStyle={textColorStyle} />
-          </div>
+                {/* Colors */}
+                <div className="bg-white rounded-xl border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Palette className="w-5 h-5" />
+                    Colors
+                  </h3>
 
-          {/* Links Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>
-                🔗 Links
-                <span className="text-xs opacity-60">({links.length}/10)</span>
-              </h2>
-              <button
-                onClick={() => setShowAddModal(true)}
-                disabled={!isPremium && links.length >= 1}
-                className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 transition ${
-                  (!isPremium && links.length >= 1)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                <Plus className="w-4 h-4" /> Add link
-              </button>
-            </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="w-12 h-12 rounded-lg cursor-pointer border"
+                        />
+                        <input
+                          type="text"
+                          value={primaryColor}
+                          onChange={(e) => setPrimaryColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
 
-            {links.length === 0 ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
-                <p className="opacity-70" style={textColorStyle}>No links yet</p>
-                <button onClick={() => setShowAddModal(true)} className="mt-3 text-black underline text-sm">
-                  Add your first link
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Text Color
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="color"
+                          value={textColor}
+                          onChange={(e) => setTextColor(e.target.value)}
+                          className="w-12 h-12 rounded-lg cursor-pointer border"
+                        />
+                        <input
+                          type="text"
+                          value={textColor}
+                          onChange={(e) => setTextColor(e.target.value)}
+                          className="flex-1 px-3 py-2 border rounded-lg text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Background */}
+                <div className="bg-white rounded-xl border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">Background</h3>
+
+                  <div className="space-y-4">
+                    <div className="flex gap-3">
+                      {(['color', 'gradient', 'image'] as const).map((type) => (
+                        <button
+                          key={type}
+                          onClick={() => setBackgroundType(type)}
+                          className={`flex-1 py-2 rounded-lg border transition ${
+                            backgroundType === type
+                              ? 'bg-black text-white border-black'
+                              : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                          }`}
+                        >
+                          {type === 'color' && 'Solid Color'}
+                          {type === 'gradient' && 'Gradient'}
+                          {type === 'image' && 'Image'}
+                        </button>
+                      ))}
+                    </div>
+
+                    {backgroundType === 'gradient' && (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">Start Color</label>
+                          <input
+                            type="color"
+                            value={gradientStart}
+                            onChange={(e) => setGradientStart(e.target.value)}
+                            className="w-full h-10 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-500 mb-1">End Color</label>
+                          <input
+                            type="color"
+                            value={gradientEnd}
+                            onChange={(e) => setGradientEnd(e.target.value)}
+                            className="w-full h-10 rounded-lg cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {backgroundType === 'image' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Background Image
+                        </label>
+                        {backgroundImage ? (
+                          <div className="relative">
+                            <img
+                              src={backgroundImage}
+                              alt="Background"
+                              className="w-full h-32 object-cover rounded-lg"
+                            />
+                            <button
+                              onClick={() => setBackgroundImage('')}
+                              className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ) : (
+                          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:border-gray-400">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleBackgroundImageUpload(file);
+                              }}
+                              className="hidden"
+                            />
+                            <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-500">Click to upload background image</p>
+                            <p className="text-xs text-gray-400">JPG, PNG, GIF up to 5MB</p>
+                          </label>
+                        )}
+                        {uploadingImage && (
+                          <div className="mt-2 flex items-center gap-2 text-sm text-gray-500">
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                            Uploading...
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Font */}
+                <div className="bg-white rounded-xl border p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">Font Family</h3>
+                  <select
+                    value={fontFamily}
+                    onChange={(e) => setFontFamily(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black outline-none"
+                  >
+                    <option value="font-sans">Sans Serif (Default)</option>
+                    <option value="font-serif">Serif</option>
+                    <option value="font-mono">Monospace</option>
+                  </select>
+                </div>
+
+                {/* Live Preview */}
+                <div className="bg-gray-100 rounded-xl p-4">
+                  <h3 className="font-semibold text-gray-900 mb-3">Live Preview</h3>
+                  <div
+                    className="rounded-lg p-6 text-center transition-all"
+                    style={{
+                      backgroundColor: backgroundType === 'color' ? primaryColor : undefined,
+                      background: backgroundType === 'gradient' ? `linear-gradient(135deg, ${gradientStart}, ${gradientEnd})` : undefined,
+                      backgroundImage: backgroundType === 'image' && backgroundImage ? `url(${backgroundImage})` : undefined,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center',
+                      color: textColor
+                    }}
+                  >
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+                      <div className="w-16 h-16 mx-auto bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xl mb-2">
+                        {portal?.displayName?.charAt(0).toUpperCase() || '👤'}
+                      </div>
+                      <p className="font-semibold">{portal?.displayName || portal?.title || 'Your Name'}</p>
+                      <p className="text-sm opacity-80 mt-1">This is how your page will look</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save Button */}
+                <button
+                  onClick={handleSaveAppearance}
+                  disabled={savingAppearance}
+                  className="w-full bg-black text-white py-3 rounded-xl font-medium hover:bg-gray-800 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {savingAppearance ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4" />
+                      Save Appearance
+                    </>
+                  )}
                 </button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {links.map((link: any) => (
-                  <LinkItem key={link.id} link={link} textColorStyle={textColorStyle} onDelete={deleteLink} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Gallery Section */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold flex items-center gap-2" style={textColorStyle}>
-                🖼️ Gallery
-                <span className="text-xs opacity-60">({stats.realProductsCount}/50)</span>
-              </h2>
-              <button
-                onClick={() => setShowAddProductModal(true)}
-                disabled={!canAddProduct()}
-                className={`px-4 py-2 rounded-full text-sm flex items-center gap-1 transition ${
-                  !canAddProduct() ? 'bg-gray-400 cursor-not-allowed' : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                <Plus className="w-4 h-4" /> Add Product
-              </button>
-            </div>
-
-            {products.length === 0 ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
-                <p className="opacity-70" style={textColorStyle}>No products in gallery</p>
-                <button onClick={() => setShowAddProductModal(true)} className="mt-3 text-black underline text-sm">
-                  Add your first product
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {products.map((product: any) => (
-                  <ProductItem
-                    key={product.id}
-                    product={product}
-                    textColorStyle={textColorStyle}
-                    onDelete={deleteProduct}
-                    onEdit={handleEditProduct}
-                  />
-                ))}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Modals with lazy loading */}
-      <Suspense fallback={null}>
-        {showAddModal && <AddLinkModal onClose={() => setShowAddModal(false)} onSave={handleAddLink} />}
-        {showAddProductModal && <AddProductModal onClose={() => setShowAddProductModal(false)} onSave={handleAddProduct} />}
-        {showEditProductModal && editingProduct && (
+      {/* Modals */}
+      {showAddLink && (
+        <AddLinkModal
+          onClose={() => setShowAddLink(false)}
+          onSave={async (link) => {
+            const success = await addLink(link);
+            if (success) setShowAddLink(false);
+            return success;
+          }}
+        />
+      )}
+
+      {showAddProduct && (
+        <AddProductModal
+          onClose={() => setShowAddProduct(false)}
+          onSave={async (product) => {
+            const success = await addProduct(product);
+            if (success) setShowAddProduct(false);
+            return success;
+          }}
+        />
+      )}
+
+
+        {editingProduct && (
           <EditProductModal
             product={editingProduct}
-            onClose={() => {
-              setShowEditProductModal(false);
-              setEditingProduct(null);
+            onClose={() => setEditingProduct(null)}
+            onSave={async (id, updates) => {
+              const success = await updateProduct(id, updates);
+              if (success) {
+                setEditingProduct(null);
+              }
+              return success;
             }}
-            onSave={handleUpdateProduct}
-            onDelete={deleteProduct}
+            onDelete={async (id) => {
+              const success = await deleteProduct(id);
+              if (success) {
+                setEditingProduct(null);
+              }
+              return success;
+            }}
           />
         )}
-        {showTemplateSelector && (
-          <TemplateSelectorModal
-            isPremium={isPremium}
-            selectedTemplate={adminSettings.templateId}
-            primaryColor={adminSettings.primaryColor}
-            textColor={adminSettings.textColor}
-            fontFamily={adminSettings.fontFamily}
-            backgroundType={adminSettings.backgroundType}
-            gradientStart={adminSettings.gradientStart}
-            gradientEnd={adminSettings.gradientEnd}
-            backgroundImage={adminSettings.backgroundImage}
-            userName={userName}
-            onClose={() => setShowTemplateSelector(false)}
-            onSelectTemplate={updateTemplate}
-            onUpgradeClick={handleUpgradeClick}
-            onBack={() => setShowTemplateSelector(false)}
-            showBack={true}
-            useSeparateStyle={useSeparateAdminStyle}
-            onStyleModeChange={setUseSeparateAdminStyle}
-          />
-        )}
-      </Suspense>
 
-      {/* Payment Modal */}
-      {showPaymentModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto p-6 text-center">
-            <h3 className="text-xl font-bold mb-2">Upgrade to Premium</h3>
-            <p className="text-gray-600 mb-4">Get access to premium features!</p>
-            <ul className="text-left text-sm space-y-2 mb-4">
-              <li>✓ 10+ Premium Templates</li>
-              <li>✓ Up to 10 Links</li>
-              <li>✓ Up to 50 Products</li>
-              <li>✓ Custom Colors & Gradients</li>
-              <li>✓ Separate Admin Styling</li>
-              <li>✓ ✨ Custom Page URL (/view/yourname)</li>
-            </ul>
-            <button onClick={handleUpgradeClick} className="w-full bg-black text-white py-3 rounded-xl">
-              Upgrade Now - ₹999
-            </button>
-            <button onClick={() => setShowPaymentModal(false)} className="w-full mt-2 py-2 text-gray-500">
-              Cancel
-            </button>
-          </div>
-        </div>
+      {showProfileSettings && portal && (
+        <ProfileSettingsModal
+          portal={portal}
+          onClose={() => setShowProfileSettings(false)}
+          onSave={handleUpdateProfile}
+        />
+      )}
+
+      {showTemplateSelector && (
+        <TemplateSelector
+          currentTemplateId={templateId}
+          isPremium={portal?.isPremium || false}
+          onSelect={(templateId) => {
+            setTemplateId(templateId);
+            setShowTemplateSelector(false);
+          }}
+          onClose={() => setShowTemplateSelector(false)}
+        />
       )}
     </div>
   );

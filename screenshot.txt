@@ -1,0 +1,1 @@
+-o creator_full_snapshot.txt  -f "*.png" "*.jpg" "*.jpeg" "*.mp4" "*.zip"

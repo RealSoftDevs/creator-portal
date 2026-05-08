@@ -1,10 +1,13 @@
+// lib/types/index.ts
 export interface Product {
   id: string;
   title: string;
+  description?: string;  // Add description field
   imageUrl: string;
   buyLink: string;
-  price: string | null;
+  price?: string | null;  // Allow both undefined and null
   platform?: string;
+  category?: string;      // Add category field
   isDummy?: boolean;
   order?: number;
   createdAt?: string;

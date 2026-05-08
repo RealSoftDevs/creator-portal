@@ -1,30 +1,32 @@
-// app/api/portal/public/route.ts
+// app/api/portal/public/route.ts (Update existing or create new)
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
-const prisma = new PrismaClient();
-// app/api/portal/public/route.ts
-// app/api/portal/public/route.ts - Ensure gradients are returned
 export async function GET(request: NextRequest) {
-  try {
-    const searchParams = request.nextUrl.searchParams;
-    const slug = searchParams.get('slug');
-    const username = searchParams.get('username');
+  const searchParams = request.nextUrl.searchParams;
+  const username = searchParams.get('username');
+  const slug = searchParams.get('slug');
 
-    let portal = null;
+  try {
+    let portal;
 
     if (username) {
+      // Find by custom username
       portal = await prisma.portal.findFirst({
         where: {
-          user: {
-            name: {
-              equals: username,
-              mode: 'insensitive'
-            }
-          }
+          OR: [
+            { user: { name: username } },
+            { slug: username }
+          ]
         },
         include: {
-          user: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+              isPremium: true
+            }
+          },
           links: {
             where: { isActive: true },
             orderBy: { order: 'asc' }
@@ -34,13 +36,17 @@ export async function GET(request: NextRequest) {
           }
         }
       });
-    }
-
-    if (!portal && slug) {
+    } else if (slug) {
       portal = await prisma.portal.findUnique({
-        where: { slug: slug },
+        where: { slug },
         include: {
-          user: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+              isPremium: true
+            }
+          },
           links: {
             where: { isActive: true },
             orderBy: { order: 'asc' }
@@ -56,37 +62,32 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Portal not found' }, { status: 404 });
     }
 
-    const displayName = portal.user.name || portal.slug;
-
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🌐 PUBLIC API - Returning Settings');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('backgroundType:', portal.backgroundType);
-    console.log('gradientStart:', portal.gradientStart);
-    console.log('gradientEnd:', portal.gradientEnd);
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
-    return NextResponse.json({
+    // Transform response with additional fields
+    const response = {
+      id: portal.id,
+      slug: portal.slug,
       title: portal.title,
       bio: portal.bio,
-      userName: displayName,
-      slug: portal.slug,
+      displayName: portal.displayName || portal.user?.name || portal.title,
+      avatarUrl: portal.avatarUrl,
+      userName: portal.user?.name || portal.slug,
       links: portal.links,
       products: portal.products,
-      templateId: portal.templateId || 'template1',
-      primaryColor: portal.primaryColor || '#f5f5f5',
-      backgroundType: portal.backgroundType || 'gradient',
-      gradientStart: portal.gradientStart || '#fb923c',
-      gradientEnd: portal.gradientEnd || '#fde047',
+      templateId: portal.templateId,
+      primaryColor: portal.primaryColor,
       backgroundImage: portal.backgroundImage,
-      textColor: portal.textColor || '#1a1a1a',
-      fontFamily: portal.fontFamily || 'font-sans',
-      isPremium: portal.user.isPremium,
-      customUsername: portal.user.name !== portal.slug ? portal.user.name : null
-    });
+      backgroundType: portal.backgroundType,
+      gradientStart: portal.gradientStart,
+      gradientEnd: portal.gradientEnd,
+      textColor: portal.textColor,
+      fontFamily: portal.fontFamily,
+      isPremium: portal.user?.isPremium || false,
+      customUsername: portal.user?.name
+    };
 
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Public API error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    console.error('Error fetching portal:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

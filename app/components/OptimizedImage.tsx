@@ -7,72 +7,72 @@ import Image from 'next/image';
 interface OptimizedImageProps {
   src: string;
   alt: string;
-  className?: string;
   width?: number;
   height?: number;
+  className?: string;
   priority?: boolean;
   quality?: number;
+  sizes?: string;
 }
 
-export default function OptimizedImage({ 
-  src, 
-  alt, 
-  className = '', 
-  width = 800, 
-  height = 800,
+export default function OptimizedImage({
+  src,
+  alt,
+  width = 400,
+  height = 400,
+  className = '',
   priority = false,
-  quality = 80
+  quality = 80,
+  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
 }: OptimizedImageProps) {
-  const [imageSrc, setImageSrc] = useState<string>('');
   const [error, setError] = useState(false);
-  
+  const [imageSrc, setImageSrc] = useState<string>('');
+
   useEffect(() => {
-    // Process image URL
-    let processedUrl = src;
-    
-    // If it's a local filesystem path, use proxy
-    if (src && (src.match(/^[A-Za-z]:\\/) || src.includes(':\\'))) {
-      processedUrl = `/api/image-proxy?url=${encodeURIComponent(src)}`;
-    } 
-    // If it's a remote URL, use proxy for better performance and caching
-    else if (src && (src.startsWith('http://') || src.startsWith('https://'))) {
-      // Only proxy external URLs to avoid CORS and improve caching
-      if (!src.includes(window.location.hostname)) {
-        processedUrl = `/api/image-proxy?url=${encodeURIComponent(src)}`;
-      }
+    if (!src) {
+      setError(true);
+      return;
     }
-    // For local public paths, use as is
-    else if (src && !src.startsWith('/api/')) {
-      processedUrl = src.startsWith('/') ? src : `/${src}`;
+
+    // Optimize Cloudinary URLs
+    if (src.includes('cloudinary.com')) {
+      // Add Cloudinary optimizations
+      const url = new URL(src);
+      url.searchParams.set('q', quality.toString());
+      url.searchParams.set('f', 'auto');
+      setImageSrc(url.toString());
+    } else {
+      setImageSrc(src);
     }
-    
-    setImageSrc(processedUrl);
-  }, [src]);
-  
-  if (!imageSrc || error) {
-    // Return placeholder on error
+  }, [src, quality]);
+
+  if (error || !imageSrc) {
     return (
-      <div 
-        className={`bg-gray-200 flex items-center justify-center ${className}`}
-        style={{ width: width ? `${width}px` : 'auto', height: height ? `${height}px` : 'auto' }}
-      >
-        <span className="text-gray-400 text-sm">📷</span>
+      <div className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${className}`}>
+        <div className="text-center">
+          <svg className="w-8 h-8 text-gray-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <p className="text-xs text-gray-400 mt-1">No image</p>
+        </div>
       </div>
     );
   }
-  
-  // Use Next.js Image for optimization
+
   return (
-    <Image
-      src={imageSrc}
-      alt={alt}
-      width={width}
-      height={height}
-      className={className}
-      priority={priority}
-      quality={quality}
-      onError={() => setError(true)}
-      loading={priority ? 'eager' : 'lazy'}
-    />
+    <div className="relative w-full h-full overflow-hidden">
+      <Image
+        src={imageSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        className={`${className} transition-opacity duration-300`}
+        priority={priority}
+        quality={quality}
+        sizes={sizes}
+        loading={priority ? 'eager' : 'lazy'}
+        onError={() => setError(true)}
+      />
+    </div>
   );
 }
