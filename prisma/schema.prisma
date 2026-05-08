@@ -103,7 +103,7 @@ model Product {
   buyLink     String
   price       String?
   platform    String    @default("custom")
-  category    String    @default("misc")
+  category    String    @default("misc")  // Make sure this line exists
   order       Int       @default(0)
   portalId    String
   portal      Portal    @relation(fields: [portalId], references: [id])

@@ -1,4 +1,4 @@
-// app/page.tsx - Complete with all functions
+// app/page.tsx - Fixed authentication flow
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -97,13 +97,6 @@ export default function DashboardPage() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!checkingAuth && !isAuthenticated) {
-      router.push('/login');
-    }
-  }, [checkingAuth, isAuthenticated, router]);
 
   // Fetch data
   const fetchPortalInfo = async () => {
@@ -216,15 +209,32 @@ export default function DashboardPage() {
     return false;
   };
 
-  const updateProduct = async (id: string, updates: any) => {
-    const res = await fetch(`/api/portal/products/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...updates, price: updates.price || null })
-    });
-    if (res.ok) { await fetchProducts(); return true; }
+const updateProduct = async (id: string, updates: any) => {
+  console.log('Updating product with data:', updates); // Debug log
+
+  const res = await fetch(`/api/portal/products/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: updates.title,
+      description: updates.description || '',
+      imageUrl: updates.imageUrl,
+      buyLink: updates.buyLink,
+      price: updates.price || null,
+      platform: updates.platform || 'custom',
+      category: updates.category || 'misc'
+    })
+  });
+
+  if (res.ok) {
+    await fetchProducts();
+    return true;
+  } else {
+    const error = await res.json();
+    console.error('Update failed:', error);
     return false;
-  };
+  }
+};
 
   const deleteProduct = async (id: string) => {
     const res = await fetch(`/api/portal/products/${id}`, { method: 'DELETE' });
@@ -255,7 +265,6 @@ export default function DashboardPage() {
   };
 
   const handleUpdateUsername = async (newUsername: string) => {
-    // Refresh portal info to get updated username
     await fetchPortalInfo();
   };
 
@@ -310,7 +319,8 @@ export default function DashboardPage() {
 
   const mostClickedLink = getMostClickedLink();
 
-  // Initialize data
+  // Initialize data - FIXED: Only redirect after checking auth is complete
+  // Make sure the auth check is correct:
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -321,24 +331,54 @@ export default function DashboardPage() {
             setIsAuthenticated(true);
             setUser(data);
             await Promise.all([fetchPortalInfo(), fetchLinks(), fetchProducts()]);
+            setLoading(false);
+            setCheckingAuth(false);
             return;
           }
         }
+        // Not authenticated - stay on login page (or redirect to login)
         setIsAuthenticated(false);
-      } catch (error) { console.error(error); } finally {
-        setCheckingAuth(false);
         setLoading(false);
+        setCheckingAuth(false);
+        // Only redirect if we're not already on login page
+        if (window.location.pathname !== '/dashboard') {
+          router.replace('/dashboard');
+        }
+      } catch (error) {
+        console.error(error);
+        setIsAuthenticated(false);
+        setLoading(false);
+        setCheckingAuth(false);
+        if (window.location.pathname !== '/dashboard') {
+          router.replace('/dashboard');
+        }
       }
     };
     checkAuth();
-  }, []);
+  }, [router]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem('admin_display_settings');
-    if (saved) { try { setAdminDisplaySettings(JSON.parse(saved)); } catch (e) {} }
-  }, []);
 
-  // Show loading state
+
+   useEffect(() => {
+     const saved = localStorage.getItem('admin_display_settings');
+     const isMobileView = window.innerWidth < 768;
+
+     if (saved) {
+       try {
+         setAdminDisplaySettings(JSON.parse(saved));
+       } catch (e) {}
+     } else {
+       // Set default based on device
+       setAdminDisplaySettings({
+         productsPerRow: isMobileView ? 2 : 6,
+         cardStyle: isMobileView ? 'list' : 'grid',
+         showDescriptions: true,
+         showPrices: true
+       });
+     }
+   }, []);
+
+  // Show loading state while checking authentication
   if (checkingAuth || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -350,7 +390,7 @@ export default function DashboardPage() {
     );
   }
 
-  // If not authenticated, return null (useEffect will redirect)
+  // If not authenticated, don't render anything (redirect happens in useEffect)
   if (!isAuthenticated) {
     return null;
   }
@@ -457,12 +497,14 @@ export default function DashboardPage() {
 
           {activeTab === 'products' && (
             <ProductsTab
-              products={realProducts}
-              settings={adminDisplaySettings}
-              onAddProduct={() => setShowAddProduct(true)}
-              onEditProduct={setEditingProduct}
-              onDeleteProduct={deleteProduct}
-              onOpenSettings={() => setShowDisplaySettings(true)}
+                products={realProducts}
+                settings={adminDisplaySettings}
+                onAddProduct={() => setShowAddProduct(true)}
+                onEditProduct={setEditingProduct}
+                onDeleteProduct={deleteProduct}
+                onOpenSettings={() => setShowDisplaySettings(true)}
+                onUpdateSettings={saveAdminDisplaySettings}
+
             />
           )}
 

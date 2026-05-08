@@ -1,4 +1,4 @@
-// app/view/[username]/page.tsx - Add appearance settings from portal
+// app/view/[username]/page.tsx - Complete public view with same filter bar as dashboard
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -8,7 +8,7 @@ import PlatformIcon from '@/app/components/PlatformIcon';
 import OptimizedImage from '@/app/components/OptimizedImage';
 import { getCategoryById } from '@/lib/categories';
 import { DisplaySettings, defaultSettings } from '@/lib/settings';
-import { Settings, Grid, Eye, EyeOff, Filter } from 'lucide-react';
+import { Settings, Grid, List, Columns, Filter, X, Eye, EyeOff } from 'lucide-react';
 
 interface SocialLink {
   id: string;
@@ -50,9 +50,9 @@ interface PortalData {
   customUsername?: string | null;
 }
 
+// Display Settings Modal
 function PublicDisplaySettingsModal({ settings, onSave, onClose }: { settings: DisplaySettings; onSave: (s: DisplaySettings) => void; onClose: () => void }) {
   const [localSettings, setLocalSettings] = useState<DisplaySettings>(settings);
-  const productsPerRowOptions = [2, 3, 4, 5, 6];
 
   const updateSetting = <K extends keyof DisplaySettings>(key: K, value: DisplaySettings[K]) => {
     const newSettings = { ...localSettings, [key]: value };
@@ -60,19 +60,64 @@ function PublicDisplaySettingsModal({ settings, onSave, onClose }: { settings: D
     onSave(newSettings);
   };
 
+  const perRowOptions = [2, 3, 4, 5, 6];
+
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-white p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold">Display Settings</h3>
-          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-700"><span className="text-2xl">×</span></button>
+          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-700">
+            <span className="text-2xl">×</span>
+          </button>
         </div>
         <div className="p-6 space-y-6">
-          <div><label className="block text-sm font-medium mb-3">View Style</label><div className="flex gap-3"><button onClick={() => updateSetting('cardStyle', 'grid')} className={`flex-1 py-3 rounded-lg border transition flex items-center justify-center gap-2 ${localSettings.cardStyle === 'grid' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}><Grid className="w-4 h-4" /> Grid View</button><button onClick={() => updateSetting('cardStyle', 'list')} className={`flex-1 py-3 rounded-lg border transition flex items-center justify-center gap-2 ${localSettings.cardStyle === 'list' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}><Grid className="w-4 h-4" /> List View</button></div></div>
-          {localSettings.cardStyle === 'grid' && (<div><label className="block text-sm font-medium mb-3 flex items-center gap-2">Products Per Row ({localSettings.productsPerRow})</label><div className="grid grid-cols-3 gap-2">{productsPerRowOptions.map(option => (<button key={option} onClick={() => updateSetting('productsPerRow', option)} className={`py-2 rounded-lg border transition ${localSettings.productsPerRow === option ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>{option} columns</button>))}</div></div>)}
-          <div className="space-y-3"><button onClick={() => updateSetting('showDescriptions', !localSettings.showDescriptions)} className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"><div className="flex items-center gap-2">{localSettings.showDescriptions ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}<span>Show Descriptions</span></div><div className={`w-10 h-5 rounded-full transition ${localSettings.showDescriptions ? 'bg-black' : 'bg-gray-300'}`}><div className={`w-4 h-4 rounded-full bg-white transition transform ${localSettings.showDescriptions ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`} /></div></button><button onClick={() => updateSetting('showPrices', !localSettings.showPrices)} className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"><div className="flex items-center gap-2">{localSettings.showPrices ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}<span>Show Prices</span></div><div className={`w-10 h-5 rounded-full transition ${localSettings.showPrices ? 'bg-black' : 'bg-gray-300'}`}><div className={`w-4 h-4 rounded-full bg-white transition transform ${localSettings.showPrices ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`} /></div></button></div>
+          {/* View Style */}
+          <div>
+            <label className="block text-sm font-medium mb-3">View Style</label>
+            <div className="flex gap-3">
+              <button onClick={() => updateSetting('cardStyle', 'grid')} className={`flex-1 py-3 rounded-lg border transition flex items-center justify-center gap-2 ${localSettings.cardStyle === 'grid' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                <Grid className="w-4 h-4" /> Grid View
+              </button>
+              <button onClick={() => updateSetting('cardStyle', 'list')} className={`flex-1 py-3 rounded-lg border transition flex items-center justify-center gap-2 ${localSettings.cardStyle === 'list' ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                <List className="w-4 h-4" /> List View
+              </button>
+            </div>
+          </div>
+
+          {/* Products Per Row - Only for Grid view */}
+          {localSettings.cardStyle === 'grid' && (
+            <div>
+              <label className="block text-sm font-medium mb-3 flex items-center gap-2">Products Per Row ({localSettings.productsPerRow})</label>
+              <div className="grid grid-cols-3 gap-2">
+                {perRowOptions.map(option => (
+                  <button key={option} onClick={() => updateSetting('productsPerRow', option)} className={`py-2 rounded-lg border transition ${localSettings.productsPerRow === option ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                    {option} columns
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Toggle Options */}
+          <div className="space-y-3">
+            <button onClick={() => updateSetting('showDescriptions', !localSettings.showDescriptions)} className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+              <div className="flex items-center gap-2">{localSettings.showDescriptions ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}<span>Show Descriptions</span></div>
+              <div className={`w-10 h-5 rounded-full transition ${localSettings.showDescriptions ? 'bg-black' : 'bg-gray-300'}`}>
+                <div className={`w-4 h-4 rounded-full bg-white transition transform ${localSettings.showDescriptions ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`} />
+              </div>
+            </button>
+            <button onClick={() => updateSetting('showPrices', !localSettings.showPrices)} className="w-full flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+              <div className="flex items-center gap-2">{localSettings.showPrices ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}<span>Show Prices</span></div>
+              <div className={`w-10 h-5 rounded-full transition ${localSettings.showPrices ? 'bg-black' : 'bg-gray-300'}`}>
+                <div className={`w-4 h-4 rounded-full bg-white transition transform ${localSettings.showPrices ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`} />
+              </div>
+            </button>
+          </div>
         </div>
-        <div className="sticky bottom-0 bg-white p-4 border-t"><button onClick={onClose} className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800">Done</button></div>
+        <div className="sticky bottom-0 bg-white p-4 border-t">
+          <button onClick={onClose} className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800">Done</button>
+        </div>
       </div>
     </div>
   );
@@ -113,19 +158,29 @@ export default function UserViewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [showFilterBar, setShowFilterBar] = useState(false);
+  const [showPerRowDropdown, setShowPerRowDropdown] = useState(false);
   const [settings, setSettings] = useState<DisplaySettings>(defaultSettings);
   const [showSettings, setShowSettings] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const deviceType = useDeviceType();
   const isMobile = deviceType === 'mobile';
 
+  // Load saved settings or set defaults based on device
   useEffect(() => {
     const savedSettings = localStorage.getItem('public_view_settings');
     if (savedSettings) {
-      try { setSettings(JSON.parse(savedSettings)); } catch (e) {}
+      try {
+        setSettings(JSON.parse(savedSettings));
+      } catch (e) {}
     } else {
-      setSettings(isMobile ? { productsPerRow: 2, cardStyle: 'list', showDescriptions: true, showPrices: true } : { productsPerRow: 4, cardStyle: 'grid', showDescriptions: true, showPrices: true });
+      // Set default based on device - list view for mobile, grid for desktop with 6 columns
+      setSettings({
+        productsPerRow: 6,
+        cardStyle: isMobile ? 'list' : 'grid',
+        showDescriptions: true,
+        showPrices: true
+      });
     }
   }, [isMobile]);
 
@@ -143,9 +198,21 @@ export default function UserViewPage() {
       .catch(() => { setError(true); setLoading(false); });
   }, [username]);
 
+  // Get unique categories and their counts
   const availableCategories = useMemo(() => {
     if (!portal?.products) return [];
-    return Array.from(new Set(portal.products.map(p => p.category || 'misc')));
+    const cats = new Set(portal.products.map(p => p.category || 'misc'));
+    return ['all', ...Array.from(cats)];
+  }, [portal?.products]);
+
+  const categoryCounts = useMemo(() => {
+    if (!portal?.products) return {};
+    const counts: Record<string, number> = { all: portal.products.length };
+    portal.products.forEach(p => {
+      const cat = p.category || 'misc';
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+    return counts;
   }, [portal?.products]);
 
   const filteredProducts = useMemo(() => {
@@ -163,6 +230,26 @@ export default function UserViewPage() {
     });
   };
 
+  const getCategoryIcon = (catId: string) => {
+    const icons: Record<string, string> = {
+      fashion: '👕', electronics: '📱', beauty: '💄', home: '🏠',
+      books: '📚', sports: '⚽', toys: '🎮', health: '💊',
+      automotive: '🚗', misc: '📦', all: '🎯'
+    };
+    return icons[catId] || '📦';
+  };
+
+  const getCategoryName = (catId: string) => {
+    const names: Record<string, string> = {
+      fashion: 'Fashion', electronics: 'Electronics', beauty: 'Beauty',
+      home: 'Home', books: 'Books', sports: 'Sports', toys: 'Toys',
+      health: 'Health', automotive: 'Automotive', misc: 'Other', all: 'All Products'
+    };
+    return names[catId] || catId;
+  };
+
+  const perRowOptions = [2, 3, 4, 5, 6];
+
   if (loading) {
     return <div className="min-h-screen flex items-center justify-center bg-gray-50"><div className="text-center"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div><p className="text-gray-500">Loading...</p></div></div>;
   }
@@ -174,7 +261,6 @@ export default function UserViewPage() {
   const template = getTemplateById(portal.templateId || 'template1');
   const fontFamilyClass = portal.fontFamily || 'font-sans';
 
-  // Build background style from portal appearance settings
   const backgroundStyle: React.CSSProperties = {};
   let backgroundImageUrl = portal.backgroundImage;
   if (backgroundImageUrl && !backgroundImageUrl.startsWith('http') && !backgroundImageUrl.startsWith('/')) backgroundImageUrl = `/${backgroundImageUrl}`;
@@ -200,13 +286,10 @@ export default function UserViewPage() {
   const socialAccounts = portal.links || [];
   const maxWidth = isMobile ? 'max-w-md' : 'max-w-7xl';
   const hasCategories = availableCategories.length > 1;
-
-  // Add transparent overlay for image backgrounds
   const showOverlay = portal.backgroundType === 'image' && backgroundImageUrl;
 
   return (
     <div className={`min-h-screen ${fontFamilyClass}`} style={backgroundStyle}>
-      {/* Transparent overlay for better text readability on image backgrounds */}
       {showOverlay && <div className="fixed inset-0 bg-black/40 pointer-events-none" />}
 
       {/* Settings Button */}
@@ -257,38 +340,132 @@ export default function UserViewPage() {
         )}
 
         {/* Products Section */}
-        {filteredProducts.length > 0 && (
+        {portal.products.length > 0 && (
           <div className="mb-10">
+            {/* Header with Controls - Same as dashboard */}
             <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold flex items-center gap-2" style={customTextColorStyle}>
                   <span className="text-xl">🛍️</span> My Products
                   <span className="text-xs opacity-60">({filteredProducts.length})</span>
                 </h2>
-                {hasCategories && (
-                  <button onClick={() => setShowCategoryFilter(!showCategoryFilter)} className="text-xs bg-white/20 backdrop-blur-sm hover:bg-white/30 px-2 py-1 rounded-full flex items-center gap-1 transition" style={customTextColorStyle}>
-                    <Filter className="w-3 h-3" /> Filter
+                {/* Filter Button - Toggles filter bar */}
+                <button
+                  onClick={() => setShowFilterBar(!showFilterBar)}
+                  className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 transition ${showFilterBar ? 'bg-black text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}
+                  style={showFilterBar ? {} : customTextColorStyle}
+                >
+                  <Filter className="w-3 h-3" />
+                  {showFilterBar ? 'Hide' : 'Filter'}
+                </button>
+              </div>
+
+              {/* View Controls */}
+              <div className="flex gap-2 items-center">
+                {/* View Style Toggle */}
+                <div className="flex bg-white/20 backdrop-blur-sm rounded-lg p-0.5">
+                  <button
+                    onClick={() => saveSettings({ ...settings, cardStyle: 'grid' })}
+                    className={`p-1.5 rounded-md transition ${settings.cardStyle === 'grid' ? 'bg-black text-white' : 'text-white/60 hover:text-white'}`}
+                    title="Grid View"
+                  >
+                    <Grid className="w-4 h-4" />
                   </button>
+                  <button
+                    onClick={() => saveSettings({ ...settings, cardStyle: 'list' })}
+                    className={`p-1.5 rounded-md transition ${settings.cardStyle === 'list' ? 'bg-black text-white' : 'text-white/60 hover:text-white'}`}
+                    title="List View"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Per Row Selector - Only in Grid view */}
+                {settings.cardStyle === 'grid' && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowPerRowDropdown(!showPerRowDropdown)}
+                      className="flex items-center gap-1 px-2 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-xs text-white hover:bg-white/30 transition"
+                    >
+                      <Columns className="w-3 h-3" />
+                      {settings.productsPerRow} cols
+                      <span className="text-xs">▼</span>
+                    </button>
+                    {showPerRowDropdown && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setShowPerRowDropdown(false)} />
+                        <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg z-50 min-w-[80px] overflow-hidden">
+                          {perRowOptions.map(option => (
+                            <button
+                              key={option}
+                              onClick={() => {
+                                saveSettings({ ...settings, productsPerRow: option });
+                                setShowPerRowDropdown(false);
+                              }}
+                              className={`w-full px-3 py-1.5 text-left text-xs hover:bg-gray-100 transition ${
+                                settings.productsPerRow === option ? 'text-purple-600 bg-gray-50' : 'text-gray-700'
+                              }`}
+                            >
+                              {option} columns
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
-              <button onClick={() => setShowSettings(true)} className="text-xs bg-white/20 backdrop-blur-sm hover:bg-white/30 px-3 py-1 rounded-full transition flex items-center gap-1" style={customTextColorStyle}>
-                <Settings className="w-3 h-3" /> Display
-              </button>
             </div>
 
-            {showCategoryFilter && hasCategories && (
-              <div className="mb-4 p-3 bg-white/20 backdrop-blur-sm rounded-lg flex flex-wrap gap-2">
-                <button onClick={() => { setActiveCategory('all'); setShowCategoryFilter(false); }} className={`px-3 py-1 rounded-full text-xs transition ${activeCategory === 'all' ? 'bg-black text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}>All ({portal.products.length})</button>
-                {availableCategories.map(catId => {
-                  const category = getCategoryById(catId);
-                  const count = portal.products.filter(p => (p.category || 'misc') === catId).length;
-                  return (<button key={catId} onClick={() => { setActiveCategory(catId); setShowCategoryFilter(false); }} className={`px-3 py-1 rounded-full text-xs transition flex items-center gap-1 ${activeCategory === catId ? 'bg-black text-white' : 'bg-white/20 text-white hover:bg-white/30'}`}><span>{category?.icon || '📦'}</span><span>{category?.name || catId}</span><span className="text-xs opacity-70">({count})</span></button>);
-                })}
+            {/* Filter Bar - Same as dashboard */}
+            {showFilterBar && hasCategories && (
+              <div className="mb-4 p-3 bg-white/20 backdrop-blur-sm rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-white/80 flex items-center gap-2">
+                    <Filter className="w-4 h-4" /> Filter by Category
+                  </h3>
+                  {activeCategory !== 'all' && (
+                    <button
+                      onClick={() => setActiveCategory('all')}
+                      className="text-xs text-purple-300 hover:text-purple-200 flex items-center gap-1"
+                    >
+                      <X className="w-3 h-3" /> Clear
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {availableCategories.map(cat => {
+                    const category = getCategoryById(cat);
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-3 py-1.5 rounded-full text-xs transition flex items-center gap-1.5 ${
+                          activeCategory === cat
+                            ? 'bg-black text-white'
+                            : 'bg-white/20 text-white hover:bg-white/30'
+                        }`}
+                      >
+                        <span>{category?.icon || getCategoryIcon(cat)}</span>
+                        <span>{category?.name || getCategoryName(cat)}</span>
+                        <span className={`text-xs ${activeCategory === cat ? 'text-white/70' : 'text-white/50'}`}>
+                          ({categoryCounts[cat] || 0})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
+            {/* Products Display */}
             <div className="max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-              {settings.cardStyle === 'list' ? (
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-white/60">No products in this category</p>
+                </div>
+              ) : settings.cardStyle === 'list' ? (
+                /* LIST VIEW */
                 <div className="space-y-3">
                   {filteredProducts.map((product) => {
                     let imageUrl = product.imageUrl;
@@ -302,20 +479,36 @@ export default function UserViewPage() {
                             <OptimizedImage src={imageUrl} alt={product.title} width={96} height={96} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" quality={75} />
                           </a>
                           <div className="flex-1 min-w-0">
-                            <a href={product.buyLink} target="_blank" rel="noopener noreferrer"><h3 className="font-semibold text-white line-clamp-1 hover:underline transition">{product.title}</h3></a>
-                            {settings.showPrices && product.price && <p className="text-lg font-bold text-green-400 mt-1">{product.price}</p>}
+                            <a href={product.buyLink} target="_blank" rel="noopener noreferrer">
+                              <h3 className="font-semibold text-white line-clamp-1 hover:underline transition">{product.title}</h3>
+                            </a>
+                            {settings.showPrices && product.price && (
+                              <p className="text-lg font-bold text-green-400 mt-1">{product.price}</p>
+                            )}
                             {settings.showDescriptions && product.description && (
-                              <div className="mt-1"><p className={`text-sm text-white/80 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>{product.description}</p>{hasLongDescription && <button onClick={() => toggleDescription(product.id)} className="text-xs text-purple-300 hover:text-purple-200 mt-1 font-medium">{isExpanded ? 'Show less ↑' : 'Read more ↓'}</button>}</div>
+                              <div className="mt-1">
+                                <p className={`text-sm text-white/80 leading-relaxed ${isExpanded ? '' : 'line-clamp-2'}`}>{product.description}</p>
+                                {hasLongDescription && (
+                                  <button onClick={() => toggleDescription(product.id)} className="text-xs text-purple-300 hover:text-purple-200 mt-1 font-medium">
+                                    {isExpanded ? 'Show less ↑' : 'Read more ↓'}
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
-                          <div className="flex-shrink-0"><a href={product.buyLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2 bg-white/30 hover:bg-white/40 text-white text-sm font-medium rounded-lg transition-all duration-300">Shop Now →</a></div>
+                          <div className="flex-shrink-0">
+                            <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center px-4 py-2 bg-white/30 hover:bg-white/40 text-white text-sm font-medium rounded-lg transition-all duration-300">
+                              Shop Now →
+                            </a>
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
               ) : (
-                <div className="grid gap-4" style={{ gridTemplateColumns: `repeat(${settings.productsPerRow}, minmax(0, 1fr))` }}>
+                /* GRID VIEW */
+                <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${settings.productsPerRow}, minmax(0, 1fr))` }}>
                   {filteredProducts.map((product) => {
                     let imageUrl = product.imageUrl;
                     if (imageUrl && imageUrl.startsWith('//')) imageUrl = 'https:' + imageUrl;
@@ -327,10 +520,22 @@ export default function UserViewPage() {
                           </div>
                         </a>
                         <div className="p-3 flex-1 flex flex-col">
-                          <a href={product.buyLink} target="_blank" rel="noopener noreferrer"><h3 className="font-semibold text-sm text-white line-clamp-2 hover:underline transition">{product.title}</h3></a>
-                          {settings.showPrices && product.price && <p className="text-lg font-bold text-green-400 mt-1">{product.price}</p>}
-                          {settings.showDescriptions && product.description && <div className="mt-2"><p className="text-xs text-white/70 leading-relaxed line-clamp-3">{product.description}</p></div>}
-                          <div className="mt-3"><a href={product.buyLink} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-white/30 hover:bg-white/40 text-white text-sm font-medium py-2.5 rounded-lg transition-all duration-300">Shop Now →</a></div>
+                          <a href={product.buyLink} target="_blank" rel="noopener noreferrer">
+                            <h3 className="font-semibold text-sm text-white line-clamp-2 hover:underline transition">{product.title}</h3>
+                          </a>
+                          {settings.showPrices && product.price && (
+                            <p className="text-lg font-bold text-green-400 mt-1">{product.price}</p>
+                          )}
+                          {settings.showDescriptions && product.description && (
+                            <div className="mt-2">
+                              <p className="text-xs text-white/70 leading-relaxed line-clamp-3">{product.description}</p>
+                            </div>
+                          )}
+                          <div className="mt-3">
+                            <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-white/30 hover:bg-white/40 text-white text-sm font-medium py-2 rounded-lg transition-all duration-300">
+                              Shop Now →
+                            </a>
+                          </div>
                         </div>
                       </div>
                     );
@@ -347,6 +552,7 @@ export default function UserViewPage() {
         </div>
       </div>
 
+      {/* Settings Modal */}
       {showSettings && <PublicDisplaySettingsModal settings={settings} onSave={saveSettings} onClose={() => setShowSettings(false)} />}
     </div>
   );
