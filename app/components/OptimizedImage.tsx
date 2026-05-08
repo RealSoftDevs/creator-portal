@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
 
 interface OptimizedImageProps {
   src: string;
@@ -23,10 +22,10 @@ export default function OptimizedImage({
   className = '',
   priority = false,
   quality = 75,
-  sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
 }: OptimizedImageProps) {
   const [error, setError] = useState(false);
-  const [optimizedSrc, setOptimizedSrc] = useState<string>('');
+  const [loaded, setLoaded] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string>('');
 
   useEffect(() => {
     if (!src) {
@@ -34,26 +33,32 @@ export default function OptimizedImage({
       return;
     }
 
-    // Optimize Cloudinary URLs
+    let finalSrc = src;
+
+    // Fix relative URLs
+    if (src.startsWith('//')) {
+      finalSrc = 'https:' + src;
+    }
+
+    // For Cloudinary images, add optimization params
     if (src.includes('cloudinary.com')) {
-      const url = new URL(src);
-      url.searchParams.set('q', quality.toString());
-      url.searchParams.set('f', 'auto');
-      url.searchParams.set('w', width.toString());
-      url.searchParams.set('h', height.toString());
-      url.searchParams.set('c', 'limit');
-      setOptimizedSrc(url.toString());
+      try {
+        const url = new URL(src);
+        url.searchParams.set('q', quality.toString());
+        url.searchParams.set('f', 'auto');
+        url.searchParams.set('w', width.toString());
+        url.searchParams.set('h', height.toString());
+        url.searchParams.set('c', 'limit');
+        finalSrc = url.toString();
+      } catch (e) {
+        // Use original if URL parsing fails
+      }
     }
-    // Proxy external images
-    else if (src.startsWith('http')) {
-      setOptimizedSrc(`/api/image-proxy?url=${encodeURIComponent(src)}&w=${width}&q=${quality}`);
-    }
-    else {
-      setOptimizedSrc(src);
-    }
+
+    setImageSrc(finalSrc);
   }, [src, width, height, quality]);
 
-  if (error || !optimizedSrc) {
+  if (error || !imageSrc) {
     return (
       <div className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center ${className}`}>
         <div className="text-center">
@@ -68,16 +73,19 @@ export default function OptimizedImage({
 
   return (
     <div className="relative w-full h-full overflow-hidden">
-      <Image
-        src={optimizedSrc}
+      {!loaded && priority && (
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 border-t-gray-800"></div>
+        </div>
+      )}
+      <img
+        src={imageSrc}
         alt={alt}
         width={width}
         height={height}
-        className={`${className} transition-opacity duration-300`}
-        priority={priority}
-        quality={quality}
-        sizes={sizes}
+        className={`${className} ${loaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
         loading={priority ? 'eager' : 'lazy'}
+        onLoad={() => setLoaded(true)}
         onError={() => setError(true)}
       />
     </div>

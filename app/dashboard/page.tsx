@@ -62,10 +62,16 @@ export default function DashboardPage() {
     }
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
-  };
+    const handleLogout = async () => {
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      localStorage.clear();
+      sessionStorage.clear();
+      await fetch('/api/logout', { method: 'POST' });
+      router.push('/login');
+    };
+
 
   if (authLoading || loading) {
     return (

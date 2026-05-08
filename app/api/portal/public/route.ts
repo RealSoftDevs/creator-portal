@@ -1,4 +1,4 @@
-// app/api/portal/public/route.ts (Update existing or create new)
+// app/api/portal/public/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
@@ -11,12 +11,12 @@ export async function GET(request: NextRequest) {
     let portal;
 
     if (username) {
-      // Find by custom username
+      // Find by custom username - CASE INSENSITIVE
       portal = await prisma.portal.findFirst({
         where: {
           OR: [
-            { user: { name: username } },
-            { slug: username }
+            { user: { name: { mode: 'insensitive', equals: username } } },
+            { slug: { mode: 'insensitive', equals: username } }
           ]
         },
         include: {

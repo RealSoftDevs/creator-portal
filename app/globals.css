@@ -352,3 +352,39 @@ body {
   padding-top: 0.5rem;
   border-top: 1px solid #e5e7eb;
 }
+/* app/globals.css - Add these grid utilities */
+.grid {
+  display: grid;
+}
+
+.min-w-0 {
+  min-width: 0;
+}
+
+/* Ensure images maintain aspect ratio */
+.aspect-square {
+  aspect-ratio: 1 / 1;
+}
+
+.object-cover {
+  object-fit: cover;
+}
+
+/* Custom scrollbar for product lists */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

@@ -28,33 +28,29 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('📡 INFO API - All Background Fields');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('MAIN backgroundType:', user.portal.backgroundType);
-    console.log('MAIN backgroundImage:', user.portal.backgroundImage);
-    console.log('MAIN primaryColor:', user.portal.primaryColor);
-    console.log('PUBLIC backgroundType:', user.portal.publicBackgroundType);
-    console.log('PUBLIC backgroundImage:', user.portal.publicBackgroundImage);
-    console.log('ADMIN backgroundType:', user.portal.adminBackgroundType);
-    console.log('ADMIN backgroundImage:', user.portal.adminBackgroundImage);
+    console.log('📡 USER PREMIUM STATUS:', user.isPremium);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-    // Return ALL portal settings - use MAIN fields for public page
+    // Return ALL portal settings
     return NextResponse.json({
+      id: user.portal.id,
       slug: user.portal.slug,
       title: user.portal.title,
       bio: user.portal.bio,
+      displayName: user.portal.displayName,
+      avatarUrl: user.portal.avatarUrl,
       userName: user.name,
-      // MAIN fields (used for public page)
       templateId: user.portal.templateId,
       primaryColor: user.portal.primaryColor,
-      backgroundType: user.portal.backgroundType,
       backgroundImage: user.portal.backgroundImage,
+      backgroundType: user.portal.backgroundType,
       gradientStart: user.portal.gradientStart,
       gradientEnd: user.portal.gradientEnd,
       textColor: user.portal.textColor,
       fontFamily: user.portal.fontFamily,
-      // Admin settings (for studio display)
+      isPremium: user.isPremium,  // Make sure this is included
+      customUsername: user.name,
+      // Admin settings
       adminTemplateId: user.portal.adminTemplateId,
       adminPrimaryColor: user.portal.adminPrimaryColor,
       adminBackgroundType: user.portal.adminBackgroundType,
@@ -62,7 +58,7 @@ export async function GET(request: NextRequest) {
       adminGradientEnd: user.portal.adminGradientEnd,
       adminBackgroundImage: user.portal.adminBackgroundImage,
       adminTextColor: user.portal.adminTextColor,
-      adminFontFamily: user.portal.adminFontFamily
+      adminFontFamily: user.portal.adminFontFamily,
     });
     
   } catch (error) {
