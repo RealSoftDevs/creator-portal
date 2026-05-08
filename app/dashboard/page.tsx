@@ -35,26 +35,40 @@ export default function DashboardPage() {
       const data = await res.json();
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📱 DASHBOARD - Loading Admin Settings');
+      console.log('📱 DASHBOARD - Raw API Response');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Admin backgroundType:', data.adminBackgroundType);
-      console.log('Admin gradientStart:', data.adminGradientStart);
-      console.log('Admin gradientEnd:', data.adminGradientEnd);
-      console.log('Admin backgroundImage:', data.adminBackgroundImage);
+      console.log('Full data:', data);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('Admin Settings from API:');
+      console.log('  adminBackgroundType:', data.adminBackgroundType);
+      console.log('  adminGradientStart:', data.adminGradientStart);
+      console.log('  adminGradientEnd:', data.adminGradientEnd);
+      console.log('  adminBackgroundImage:', data.adminBackgroundImage);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       setPortalSlug(data.slug);
 
-      // Load admin settings - IMPORTANT: Use admin-specific fields
+      // IMPORTANT: Use admin fields. If they don't exist, fallback to public fields
+      const backgroundType = data.adminBackgroundType || data.backgroundType || 'gradient';
+      const gradientStart = data.adminGradientStart || data.gradientStart || '#fb923c';
+      const gradientEnd = data.adminGradientEnd || data.gradientEnd || '#fde047';
+      const backgroundImage = data.adminBackgroundImage || data.backgroundImage || '';
+
+      console.log('🎨 Final Admin Settings:');
+      console.log('  backgroundType:', backgroundType);
+      console.log('  gradientStart:', gradientStart);
+      console.log('  gradientEnd:', gradientEnd);
+      console.log('  backgroundImage:', backgroundImage);
+
       setAdminSettings({
         templateId: data.adminTemplateId || data.templateId || 'template1',
         primaryColor: data.adminPrimaryColor || data.primaryColor || '#f5f5f5',
         textColor: data.adminTextColor || data.textColor || '#1a1a1a',
         fontFamily: data.adminFontFamily || data.fontFamily || 'font-sans',
-        backgroundType: data.adminBackgroundType || data.backgroundType || 'gradient',
-        gradientStart: data.adminGradientStart || data.gradientStart || '#fb923c',
-        gradientEnd: data.adminGradientEnd || data.gradientEnd || '#fde047',
-        backgroundImage: data.adminBackgroundImage || data.backgroundImage || ''
+        backgroundType: backgroundType,
+        gradientStart: gradientStart,
+        gradientEnd: gradientEnd,
+        backgroundImage: backgroundImage,
       });
     } catch (error) {
       console.error('Failed to load admin settings:', error);
@@ -83,31 +97,30 @@ export default function DashboardPage() {
     return null;
   }
 
-  const template = getTemplateById(adminSettings.templateId);
-
   // Build background style for admin page
   const backgroundStyle: React.CSSProperties = {};
 
   if (adminSettings.backgroundType === 'gradient' && adminSettings.gradientStart && adminSettings.gradientEnd) {
     backgroundStyle.background = `linear-gradient(135deg, ${adminSettings.gradientStart}, ${adminSettings.gradientEnd})`;
     backgroundStyle.minHeight = '100vh';
-    console.log('🎨 Admin Dashboard using GRADIENT:', adminSettings.gradientStart, '→', adminSettings.gradientEnd);
+    console.log('🎨 Applying GRADIENT to admin page:', adminSettings.gradientStart, '→', adminSettings.gradientEnd);
   } else if (adminSettings.backgroundType === 'image' && adminSettings.backgroundImage) {
     backgroundStyle.backgroundImage = `url(${adminSettings.backgroundImage})`;
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.minHeight = '100vh';
-    console.log('🎨 Admin Dashboard using IMAGE:', adminSettings.backgroundImage);
+    console.log('🎨 Applying IMAGE to admin page:', adminSettings.backgroundImage);
   } else if (adminSettings.backgroundType === 'color') {
     backgroundStyle.backgroundColor = adminSettings.primaryColor;
     backgroundStyle.minHeight = '100vh';
-    console.log('🎨 Admin Dashboard using COLOR:', adminSettings.primaryColor);
+    console.log('🎨 Applying COLOR to admin page:', adminSettings.primaryColor);
   } else {
-    backgroundStyle.backgroundColor = adminSettings.primaryColor || template.defaultBackground;
+    backgroundStyle.backgroundColor = '#f5f5f5';
     backgroundStyle.minHeight = '100vh';
+    console.log('🎨 Applying DEFAULT to admin page');
   }
 
-  const textColorStyle = { color: adminSettings.textColor || template.defaultTextColor };
+  const textColorStyle = { color: adminSettings.textColor || '#1a1a1a' };
   const fontClass = adminSettings.fontFamily || 'font-sans';
 
   return (

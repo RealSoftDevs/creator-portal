@@ -3,8 +3,6 @@ import type { NextConfig } from "next";
 module.exports = {
   allowedDevOrigins: ['192.168.1.26'],
 }
-// next.config.ts
-import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client'],
