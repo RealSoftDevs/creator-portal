@@ -388,3 +388,11 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+/* app/globals.css - Add these styles for category image buttons */
+.category-image-preview {
+  transition: transform 0.2s ease;
+}
+
+.category-image-preview:hover {
+  transform: scale(1.1);
+}

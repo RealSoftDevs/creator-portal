@@ -95,7 +95,7 @@ export default function ProfileSettingsModal({ portal, onClose, onSave }: Profil
   };
 
   const getInitialName = () => {
-    const name = displayName || title || portal.userName;
+    const name = displayName || title || portal.userName || 'User';
     return name.charAt(0).toUpperCase();
   };
 
@@ -250,11 +250,11 @@ export default function ProfileSettingsModal({ portal, onClose, onSave }: Profil
                 <img src={avatarUrl} alt="Preview" className="w-12 h-12 rounded-full object-cover" />
               ) : (
                 <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white">
-                  {(displayName || title || portal.userName).charAt(0).toUpperCase()}
+                  {(displayName || title || portal.userName || 'U').charAt(0).toUpperCase()}
                 </div>
               )}
               <div>
-                <p className="font-semibold text-gray-900">{displayName || title || portal.userName}</p>
+                <p className="font-semibold text-gray-900">{displayName || title || portal.userName || 'User'}</p>
                 {bio && <p className="text-xs text-gray-500 line-clamp-1">{bio}</p>}
               </div>
             </div>

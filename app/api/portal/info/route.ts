@@ -30,6 +30,15 @@ export async function GET(request: NextRequest) {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📡 USER PREMIUM STATUS:', user.isPremium);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('PUBLIC Settings:');
+    console.log('  backgroundType:', user.portal.backgroundType);
+    console.log('  gradientStart:', user.portal.gradientStart);
+    console.log('  gradientEnd:', user.portal.gradientEnd);
+    console.log('ADMIN Settings:');
+    console.log('  adminBackgroundType:', user.portal.adminBackgroundType);
+    console.log('  adminGradientStart:', user.portal.adminGradientStart);
+    console.log('  adminGradientEnd:', user.portal.adminGradientEnd);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     // Return ALL portal settings
     return NextResponse.json({
@@ -40,6 +49,9 @@ export async function GET(request: NextRequest) {
       displayName: user.portal.displayName,
       avatarUrl: user.portal.avatarUrl,
       userName: user.name,
+      isPremium: user.isPremium,
+      customUsername: user.name,
+      // Public settings
       templateId: user.portal.templateId,
       primaryColor: user.portal.primaryColor,
       backgroundImage: user.portal.backgroundImage,
@@ -48,8 +60,6 @@ export async function GET(request: NextRequest) {
       gradientEnd: user.portal.gradientEnd,
       textColor: user.portal.textColor,
       fontFamily: user.portal.fontFamily,
-      isPremium: user.isPremium,  // Make sure this is included
-      customUsername: user.name,
       // Admin settings
       adminTemplateId: user.portal.adminTemplateId,
       adminPrimaryColor: user.portal.adminPrimaryColor,

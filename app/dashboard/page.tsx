@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx - Complete fix
+// app/dashboard/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,16 +35,17 @@ export default function DashboardPage() {
       const data = await res.json();
 
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('📱 DASHBOARD - Loading Settings');
+      console.log('📱 DASHBOARD - Loading Admin Settings');
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.log('Admin backgroundType:', data.adminBackgroundType || data.backgroundType);
-      console.log('Admin gradientStart:', data.adminGradientStart || data.gradientStart);
-      console.log('Admin gradientEnd:', data.adminGradientEnd || data.gradientEnd);
+      console.log('Admin backgroundType:', data.adminBackgroundType);
+      console.log('Admin gradientStart:', data.adminGradientStart);
+      console.log('Admin gradientEnd:', data.adminGradientEnd);
+      console.log('Admin backgroundImage:', data.adminBackgroundImage);
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       setPortalSlug(data.slug);
 
-      // Load admin settings (use ADMIN fields if they exist, otherwise MAIN)
+      // Load admin settings - IMPORTANT: Use admin-specific fields
       setAdminSettings({
         templateId: data.adminTemplateId || data.templateId || 'template1',
         primaryColor: data.adminPrimaryColor || data.primaryColor || '#f5f5f5',
@@ -62,20 +63,14 @@ export default function DashboardPage() {
     }
   };
 
-    const handleLogout = async () => {
-      document.cookie.split(";").forEach(function(c) {
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-      });
-      localStorage.clear();
-      sessionStorage.clear();
-      await fetch('/api/logout', { method: 'POST' });
-      router.push('/login');
-    };
-
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    router.push('/login');
+  };
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <p className="text-gray-500">Loading...</p>
@@ -90,18 +85,23 @@ export default function DashboardPage() {
 
   const template = getTemplateById(adminSettings.templateId);
 
-  // Build background style
+  // Build background style for admin page
   const backgroundStyle: React.CSSProperties = {};
 
   if (adminSettings.backgroundType === 'gradient' && adminSettings.gradientStart && adminSettings.gradientEnd) {
     backgroundStyle.background = `linear-gradient(135deg, ${adminSettings.gradientStart}, ${adminSettings.gradientEnd})`;
     backgroundStyle.minHeight = '100vh';
-    console.log('🎨 Dashboard using GRADIENT:', adminSettings.gradientStart, '→', adminSettings.gradientEnd);
+    console.log('🎨 Admin Dashboard using GRADIENT:', adminSettings.gradientStart, '→', adminSettings.gradientEnd);
   } else if (adminSettings.backgroundType === 'image' && adminSettings.backgroundImage) {
     backgroundStyle.backgroundImage = `url(${adminSettings.backgroundImage})`;
     backgroundStyle.backgroundSize = 'cover';
     backgroundStyle.backgroundPosition = 'center';
     backgroundStyle.minHeight = '100vh';
+    console.log('🎨 Admin Dashboard using IMAGE:', adminSettings.backgroundImage);
+  } else if (adminSettings.backgroundType === 'color') {
+    backgroundStyle.backgroundColor = adminSettings.primaryColor;
+    backgroundStyle.minHeight = '100vh';
+    console.log('🎨 Admin Dashboard using COLOR:', adminSettings.primaryColor);
   } else {
     backgroundStyle.backgroundColor = adminSettings.primaryColor || template.defaultBackground;
     backgroundStyle.minHeight = '100vh';

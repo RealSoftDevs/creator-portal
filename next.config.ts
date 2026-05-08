@@ -3,11 +3,13 @@ import type { NextConfig } from "next";
 module.exports = {
   allowedDevOrigins: ['192.168.1.26'],
 }
-
+// next.config.ts
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ['@prisma/client'],
 
+  // Configure images to allow external domains
   images: {
     // Allow all external domains (for development)
     remotePatterns: [
@@ -25,18 +27,20 @@ const nextConfig: NextConfig = {
       {
         pathname: '/images/**',
       },
+      {
+        pathname: '/api/image-proxy/**',
+      },
     ],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     formats: ['image/webp'],
     dangerouslyAllowSVG: true,
-    // Disable the image optimization for external URLs to avoid the proxy issue
+    // Disable the image optimization for external URLs
     unoptimized: true,
   },
 
   compress: true,
   reactStrictMode: true,
-  swcMinify: true,
 
   experimental: {
     optimizePackageImports: ['lucide-react', 'next-cloudinary'],

@@ -6,24 +6,14 @@
   <component name="ChangeListManager">
     <list default="true" id="16c32d87-c3d0-486e-a843-119911e5d2e9" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/debug/defaults/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/images/list/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/background-check/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/public/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/public/route.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/reset-theme/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/sync-background/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/update-username/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/portal/verify/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/api/test/route.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/components/OptimizedImage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/components/OptimizedImage.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/api/portal/appearance/route.ts" beforeDir="false" afterPath="$PROJECT_DIR$/app/api/portal/appearance/route.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/dashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/app/globals.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/studio/components/DisplaySettingsModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/DisplaySettingsModal.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/studio/components/GallerySection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/GallerySection.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/PreviewCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/PreviewCard.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/ProfileSettingsModal.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/ProfileSettingsModal.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/studio/components/StatsCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/components/StatsCard.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/studio/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/studio/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/view/[username]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/view/[username]/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/settings.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/settings.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/next.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/next.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

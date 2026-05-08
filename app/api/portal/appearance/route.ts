@@ -22,12 +22,11 @@ export async function PUT(request: NextRequest) {
       gradientStart,
       gradientEnd,
       backgroundImage,
-      target = 'public' // 'public' or 'admin'
+      target = 'public'
     } = body;
 
-    console.log('🎨 Saving appearance settings:', { target, templateId, backgroundType, gradientStart, gradientEnd });
+    console.log('🎨 Saving appearance settings:', { target, templateId, backgroundType, gradientStart, gradientEnd, backgroundImage });
 
-    // Prepare update data based on target
     let updateData: any = {};
 
     if (target === 'public') {
@@ -42,9 +41,9 @@ export async function PUT(request: NextRequest) {
         backgroundImage: backgroundImage || '/images/default-bg.jpg',
       };
     } else {
-      // Admin settings (premium only)
+      // Admin settings
       if (!user.isPremium) {
-        return NextResponse.json({ error: 'Premium feature' }, { status: 403 });
+        return NextResponse.json({ error: 'Premium feature required' }, { status: 403 });
       }
       updateData = {
         adminTemplateId: templateId || 'template1',
@@ -63,7 +62,8 @@ export async function PUT(request: NextRequest) {
       data: updateData
     });
 
-    console.log('✅ Appearance saved successfully');
+    console.log('✅ Appearance saved successfully for:', target);
+    console.log('Updated settings:', updateData);
 
     return NextResponse.json({
       success: true,
